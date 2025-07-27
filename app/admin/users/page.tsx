@@ -1,7 +1,5 @@
 "use client"
 
-import { Label } from "@/components/ui/label"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,85 +7,117 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Users, Search, Filter, Edit, Trash2, Eye, CheckCircle, XCircle } from "lucide-react"
+import { Search, Filter, User, CheckCircle, XCircle } from "lucide-react"
 import AdminLayout from "@/components/admin-layout"
 
-const users = [
+type UserRole = "Vendor" | "Supplier" | "Admin"
+type UserStatus = "Active" | "Inactive" | "Suspended"
+type VerificationStatus = "Verified" | "Unverified"
+
+type UserData = {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  status: UserStatus
+  verification: VerificationStatus
+  lastLogin: string
+}
+
+const allUsers: UserData[] = [
   {
-    id: "V-001",
+    id: "USR-001",
     name: "Rajesh Kumar",
-    type: "Vendor",
-    email: "rajesh@example.com",
+    email: "rajesh.k@example.com",
+    role: "Vendor",
     status: "Active",
-    isVerified: true,
-    joined: "2023-01-15",
+    verification: "Verified",
+    lastLogin: "2024-07-28",
   },
   {
-    id: "S-001",
-    name: "Suresh Vegetables",
-    type: "Supplier",
-    email: "suresh@example.com",
-    status: "Active",
-    isVerified: true,
-    joined: "2023-02-01",
-  },
-  {
-    id: "V-002",
+    id: "USR-002",
     name: "Priya Sharma",
-    type: "Vendor",
-    email: "priya@example.com",
-    status: "Inactive",
-    isVerified: false,
-    joined: "2023-03-10",
-  },
-  {
-    id: "S-002",
-    name: "Fresh Mart",
-    type: "Supplier",
-    email: "freshmart@example.com",
-    status: "Pending",
-    isVerified: false,
-    joined: "2023-04-05",
-  },
-  {
-    id: "V-003",
-    name: "Amit Singh",
-    type: "Vendor",
-    email: "amit@example.com",
+    email: "priya.s@example.com",
+    role: "Supplier",
     status: "Active",
-    isVerified: true,
-    joined: "2023-05-20",
+    verification: "Verified",
+    lastLogin: "2024-07-27",
+  },
+  {
+    id: "USR-003",
+    name: "Amit Singh",
+    email: "amit.s@example.com",
+    role: "Vendor",
+    status: "Inactive",
+    verification: "Unverified",
+    lastLogin: "2024-07-20",
+  },
+  {
+    id: "USR-004",
+    name: "Kiran Devi",
+    email: "kiran.d@example.com",
+    role: "Supplier",
+    status: "Suspended",
+    verification: "Verified",
+    lastLogin: "2024-07-15",
+  },
+  {
+    id: "USR-005",
+    name: "Admin User",
+    email: "admin@example.com",
+    role: "Admin",
+    status: "Active",
+    verification: "Verified",
+    lastLogin: "2024-07-29",
+  },
+  {
+    id: "USR-006",
+    name: "New Vendor",
+    email: "new.vendor@example.com",
+    role: "Vendor",
+    status: "Active",
+    verification: "Unverified",
+    lastLogin: "2024-07-29",
   },
 ]
 
 export default function AdminUsersPage() {
+  const [users, setUsers] = useState<UserData[]>(allUsers)
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterType, setFilterType] = useState("All")
+  const [filterRole, setFilterRole] = useState("All")
   const [filterStatus, setFilterStatus] = useState("All")
-  const [filterVerification, setFilterVerification] = useState("All")
+  const [filterVerification, setFilterVerification] = useState("All") // New filter state
 
   const filteredUsers = users.filter((user) => {
     const searchMatch =
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.id.toLowerCase().includes(searchTerm.toLowerCase())
-    const typeMatch = filterType === "All" || user.type === filterType
+    const roleMatch = filterRole === "All" || user.role === filterRole
     const statusMatch = filterStatus === "All" || user.status === filterStatus
-    const verificationMatch =
-      filterVerification === "All" ||
-      (filterVerification === "Verified" && user.isVerified) ||
-      (filterVerification === "Unverified" && !user.isVerified)
-    return searchMatch && typeMatch && statusMatch && verificationMatch
+    const verificationMatch = filterVerification === "All" || user.verification === filterVerification // New filter logic
+    return searchMatch && roleMatch && statusMatch && verificationMatch
   })
 
-  const getStatusBadgeVariant = (status: string) => {
+  const getStatusBadgeVariant = (status: UserStatus) => {
     switch (status) {
       case "Active":
         return "default"
       case "Inactive":
-        return "destructive"
-      case "Pending":
         return "secondary"
+      case "Suspended":
+        return "destructive"
+      default:
+        return "outline"
+    }
+  }
+
+  const getVerificationBadgeVariant = (verification: VerificationStatus) => {
+    switch (verification) {
+      case "Verified":
+        return "default"
+      case "Unverified":
+        return "destructive"
       default:
         return "outline"
     }
@@ -98,7 +128,7 @@ export default function AdminUsersPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold mb-2">User Management</h1>
-          <p className="text-gray-600">Manage all vendors and suppliers on the SathiBazaar platform.</p>
+          <p className="text-gray-600">Manage all users, including vendors, suppliers, and admins.</p>
         </div>
 
         {/* Filters and Search */}
@@ -107,50 +137,44 @@ export default function AdminUsersPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
               <Input
-                placeholder="Search by name, email, or ID..."
+                placeholder="Search by Name, Email, ID..."
                 className="pl-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="flex-1 space-y-2 md:space-y-0">
-              <Label htmlFor="type-filter" className="sr-only">
-                Filter by Type
-              </Label>
-              <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger id="type-filter">
-                  <SelectValue placeholder="All Types" />
+            <div className="flex-1">
+              <Select value={filterRole} onValueChange={setFilterRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by Role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="All">All Types</SelectItem>
+                  <SelectItem value="All">All Roles</SelectItem>
                   <SelectItem value="Vendor">Vendor</SelectItem>
                   <SelectItem value="Supplier">Supplier</SelectItem>
+                  <SelectItem value="Admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex-1 space-y-2 md:space-y-0">
-              <Label htmlFor="status-filter" className="sr-only">
-                Filter by Status
-              </Label>
+            <div className="flex-1">
               <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger id="status-filter">
-                  <SelectValue placeholder="All Statuses" />
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="All">All Statuses</SelectItem>
                   <SelectItem value="Active">Active</SelectItem>
                   <SelectItem value="Inactive">Inactive</SelectItem>
-                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Suspended">Suspended</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex-1 space-y-2 md:space-y-0">
-              <Label htmlFor="verification-filter" className="sr-only">
-                Filter by Verification
-              </Label>
+            <div className="flex-1">
               <Select value={filterVerification} onValueChange={setFilterVerification}>
-                <SelectTrigger id="verification-filter">
-                  <SelectValue placeholder="All Verification" />
+                {" "}
+                {/* New Verification Filter */}
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by Verification" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="All">All Verification</SelectItem>
@@ -164,9 +188,9 @@ export default function AdminUsersPage() {
                 variant="outline"
                 onClick={() => {
                   setSearchTerm("")
-                  setFilterType("All")
+                  setFilterRole("All")
                   setFilterStatus("All")
-                  setFilterVerification("All")
+                  setFilterVerification("All") // Reset new filter
                 }}
               >
                 <Filter className="h-4 w-4 mr-2" />
@@ -180,8 +204,8 @@ export default function AdminUsersPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Users className="h-5 w-5 mr-2" />
-              Platform Users
+              <User className="h-5 w-5 mr-2" />
+              All Users
             </CardTitle>
             <CardDescription>A comprehensive list of all registered users.</CardDescription>
           </CardHeader>
@@ -192,11 +216,11 @@ export default function AdminUsersPage() {
                   <TableRow>
                     <TableHead>User ID</TableHead>
                     <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Verification</TableHead>
-                    <TableHead>Joined Date</TableHead>
+                    <TableHead>Verification</TableHead> {/* New column */}
+                    <TableHead>Last Login</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -212,37 +236,29 @@ export default function AdminUsersPage() {
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">{user.id}</TableCell>
                         <TableCell>{user.name}</TableCell>
-                        <TableCell>
-                          <Badge variant={user.type === "Vendor" ? "default" : "secondary"}>{user.type}</Badge>
-                        </TableCell>
                         <TableCell>{user.email}</TableCell>
+                        <TableCell>{user.role}</TableCell>
                         <TableCell>
                           <Badge variant={getStatusBadgeVariant(user.status)}>{user.status}</Badge>
                         </TableCell>
                         <TableCell>
-                          {user.isVerified ? (
-                            <Badge className="bg-green-100 text-green-800">
-                              <CheckCircle className="h-3 w-3 mr-1" /> Verified
-                            </Badge>
-                          ) : (
-                            <Badge variant="destructive">
-                              <XCircle className="h-3 w-3 mr-1" /> Unverified
-                            </Badge>
-                          )}
+                          <Badge
+                            variant={getVerificationBadgeVariant(user.verification)}
+                            className="flex items-center gap-1"
+                          >
+                            {user.verification === "Verified" ? (
+                              <CheckCircle className="h-3 w-3" />
+                            ) : (
+                              <XCircle className="h-3 w-3" />
+                            )}
+                            {user.verification}
+                          </Badge>
                         </TableCell>
-                        <TableCell>{user.joined}</TableCell>
+                        <TableCell>{user.lastLogin}</TableCell>
                         <TableCell>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="icon" title="View Details">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="outline" size="icon" title="Edit User">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="destructive" size="icon" title="Delete User">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          <Button variant="outline" size="sm">
+                            Edit
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))

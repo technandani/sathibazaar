@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import type React from "react"
 
 import { useState } from "react"
@@ -22,37 +21,12 @@ type Product = {
   unit: string
   availability: "In Stock" | "Out of Stock" | "Limited"
   locationServed: string
-  image: string
 }
 
 const initialProducts: Product[] = [
-  {
-    id: "P-001",
-    name: "Onions",
-    unitPrice: 28,
-    unit: "kg",
-    availability: "In Stock",
-    locationServed: "Delhi NCR",
-    image: "/placeholder.svg?height=50&width=50",
-  },
-  {
-    id: "P-002",
-    name: "Tomatoes",
-    unitPrice: 42,
-    unit: "kg",
-    availability: "Limited",
-    locationServed: "Delhi NCR",
-    image: "/placeholder.svg?height=50&width=50",
-  },
-  {
-    id: "P-003",
-    name: "Potatoes",
-    unitPrice: 20,
-    unit: "kg",
-    availability: "In Stock",
-    locationServed: "Delhi NCR",
-    image: "/placeholder.svg?height=50&width=50",
-  },
+  { id: "P-001", name: "Onions", unitPrice: 28, unit: "kg", availability: "In Stock", locationServed: "Delhi NCR" },
+  { id: "P-002", name: "Tomatoes", unitPrice: 42, unit: "kg", availability: "Limited", locationServed: "Delhi NCR" },
+  { id: "P-003", name: "Potatoes", unitPrice: 20, unit: "kg", availability: "In Stock", locationServed: "Delhi NCR" },
   {
     id: "P-004",
     name: "Green Chili",
@@ -60,7 +34,6 @@ const initialProducts: Product[] = [
     unit: "kg",
     availability: "In Stock",
     locationServed: "Delhi NCR",
-    image: "/placeholder.svg?height=50&width=50",
   },
   {
     id: "P-005",
@@ -69,7 +42,6 @@ const initialProducts: Product[] = [
     unit: "piece",
     availability: "Out of Stock",
     locationServed: "Delhi NCR",
-    image: "/placeholder.svg?height=50&width=50",
   },
 ]
 
@@ -83,7 +55,6 @@ export default function SupplierProductsPage() {
   const [unit, setUnit] = useState("kg")
   const [availability, setAvailability] = useState<Product["availability"]>("In Stock")
   const [locationServed, setLocationServed] = useState("Delhi NCR")
-  const [productImage, setProductImage] = useState("") // New state for image
 
   const [searchTerm, setSearchTerm] = useState("")
   const [filterAvailability, setFilterAvailability] = useState("All")
@@ -99,8 +70,6 @@ export default function SupplierProductsPage() {
       return
     }
 
-    const newImage = productImage || `/placeholder.svg?height=50&width=50&query=${productName.toLowerCase()}`
-
     if (editingProduct) {
       setProducts(
         products.map((p) =>
@@ -112,7 +81,6 @@ export default function SupplierProductsPage() {
                 unit,
                 availability,
                 locationServed,
-                image: newImage,
               }
             : p,
         ),
@@ -129,7 +97,6 @@ export default function SupplierProductsPage() {
         unit,
         availability,
         locationServed,
-        image: newImage,
       }
       setProducts([...products, newProduct])
       toast({
@@ -147,7 +114,6 @@ export default function SupplierProductsPage() {
     setUnit(product.unit)
     setAvailability(product.availability)
     setLocationServed(product.locationServed)
-    setProductImage(product.image)
   }
 
   const handleDeleteClick = (id: string) => {
@@ -165,7 +131,6 @@ export default function SupplierProductsPage() {
     setUnit("kg")
     setAvailability("In Stock")
     setLocationServed("Delhi NCR")
-    setProductImage("")
   }
 
   const filteredProducts = products.filter(
@@ -196,7 +161,7 @@ export default function SupplierProductsPage() {
         </div>
 
         {/* Add/Edit Product Form */}
-        <Card className="shadow-sm border-blue-200">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <Package className="h-5 w-5 mr-2" />
@@ -266,33 +231,12 @@ export default function SupplierProductsPage() {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="product-image">Product Image URL (Optional)</Label>
-                <Input
-                  id="product-image"
-                  type="url"
-                  placeholder="e.g., /placeholder.svg?query=onions"
-                  value={productImage}
-                  onChange={(e) => setProductImage(e.target.value)}
-                />
-                {productImage && (
-                  <div className="mt-2">
-                    <Image
-                      src={productImage || "/placeholder.svg"}
-                      alt="Product Preview"
-                      width={80}
-                      height={80}
-                      className="rounded-md"
-                    />
-                  </div>
-                )}
-              </div>
               <div className="flex gap-2">
-                <Button type="submit" className="bg-blue-600 hover:bg-blue-700 shadow-md">
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
                   {editingProduct ? "Update Product" : "Add Product"}
                 </Button>
                 {editingProduct && (
-                  <Button type="button" variant="outline" onClick={resetForm} className="bg-transparent">
+                  <Button type="button" variant="outline" onClick={resetForm}>
                     Cancel Edit
                   </Button>
                 )}
@@ -302,7 +246,7 @@ export default function SupplierProductsPage() {
         </Card>
 
         {/* Product List */}
-        <Card className="shadow-sm">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <Package className="h-5 w-5 mr-2" />
@@ -342,7 +286,6 @@ export default function SupplierProductsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Image</TableHead>
                     <TableHead>Product ID</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Unit Price</TableHead>
@@ -355,22 +298,13 @@ export default function SupplierProductsPage() {
                 <TableBody>
                   {filteredProducts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center text-gray-500">
+                      <TableCell colSpan={7} className="text-center text-gray-500">
                         No products found matching your criteria.
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredProducts.map((product) => (
                       <TableRow key={product.id}>
-                        <TableCell>
-                          <Image
-                            src={product.image || "/placeholder.svg"}
-                            alt={product.name}
-                            width={40}
-                            height={40}
-                            className="rounded-md object-cover"
-                          />
-                        </TableCell>
                         <TableCell className="font-medium">{product.id}</TableCell>
                         <TableCell>{product.name}</TableCell>
                         <TableCell>₹{product.unitPrice.toFixed(2)}</TableCell>

@@ -1,508 +1,386 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import {
-  ShoppingCart,
-  Users,
-  TrendingDown,
-  Star,
-  Phone,
-  Mail,
-  MapPin,
-  CheckCircle,
-  ArrowRight,
-  Play,
-  Shield,
-  Clock,
-  Zap,
-  Award,
-  Target,
-  Truck,
-  DollarSign,
-} from "lucide-react"
+import type React from "react"
+
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card"
+import { CircleDollarSign, Users, Truck, BarChart, ShoppingCart, Menu, ArrowRight, CheckCircle } from "lucide-react"
+import Image from "next/image"
+import { useToast } from "@/components/ui/use-toast"
+import { useState } from "react"
+import { Input } from "@/components/ui/input"
 
-const stats = [
-  { label: "Active Vendors", value: "2,500+", icon: Users },
-  { label: "Suppliers", value: "150+", icon: Truck },
-  { label: "Orders Completed", value: "10,000+", icon: CheckCircle },
-  { label: "Money Saved", value: "₹50L+", icon: DollarSign },
-]
+export default function LandingPage() {
+  const { toast } = useToast()
+  const [email, setEmail] = useState("")
 
-const features = [
-  {
-    icon: Users,
-    title: "Group Buying Power",
-    description: "Join forces with nearby vendors to unlock bulk pricing and maximize your savings.",
-    color: "bg-blue-500",
-  },
-  {
-    icon: TrendingDown,
-    title: "Dynamic Pricing",
-    description: "Watch prices drop in real-time as more vendors join your group order.",
-    color: "bg-green-500",
-  },
-  {
-    icon: Shield,
-    title: "Secure Payments",
-    description: "Safe and secure payment processing with multiple payment options.",
-    color: "bg-purple-500",
-  },
-  {
-    icon: Clock,
-    title: "Quick Delivery",
-    description: "Fast and reliable delivery from trusted local suppliers in your area.",
-    color: "bg-orange-500",
-  },
-  {
-    icon: Zap,
-    title: "Instant Notifications",
-    description: "Get real-time updates on order status, price changes, and delivery schedules.",
-    color: "bg-yellow-500",
-  },
-  {
-    icon: Award,
-    title: "Quality Assured",
-    description: "All suppliers are verified and rated by the vendor community.",
-    color: "bg-red-500",
-  },
-]
-
-const testimonials = [
-  {
-    name: "Rajesh Kumar",
-    role: "Street Food Vendor",
-    location: "Delhi",
-    image: "R",
-    rating: 5,
-    text: "SathiBazaar helped me save 30% on my monthly raw material costs. The group ordering system is brilliant! I can now focus more on my business instead of worrying about ingredient costs.",
-    savings: "₹8,000/month",
-  },
-  {
-    name: "Priya Sharma",
-    role: "Chaat Vendor",
-    location: "Mumbai",
-    image: "P",
-    rating: 5,
-    text: "The quality of ingredients is excellent and the delivery is always on time. My customers have noticed the difference in taste since I started using SathiBazaar.",
-    savings: "₹5,500/month",
-  },
-  {
-    name: "Suresh Vegetables",
-    role: "Wholesale Supplier",
-    location: "Bangalore",
-    image: "S",
-    rating: 5,
-    text: "As a supplier, I love the bulk orders. It's easier to manage inventory and vendors get better prices too. Win-win for everyone!",
-    savings: "40% more orders",
-  },
-]
-
-export default function HomePage() {
-  const [currentTestimonial, setCurrentTestimonial] = useState(0)
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
-    }, 5000)
-    return () => clearInterval(timer)
-  }, [])
+  const handleNewsletterSignup = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (email) {
+      toast({
+        title: "Signed Up!",
+        description: "You've successfully subscribed to our newsletter.",
+      })
+      setEmail("")
+    } else {
+      toast({
+        title: "Email Required",
+        description: "Please enter your email address to subscribe.",
+        variant: "destructive",
+      })
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="border-b bg-white/95 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
-              <ShoppingCart className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                SathiBazaar
-              </h1>
-              <p className="text-xs text-gray-500">Smart Group Buying</p>
-            </div>
-          </div>
-          <div className="flex space-x-3">
-            <Link href="/vendor/dashboard">
-              <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50 bg-transparent">
-                <Users className="h-4 w-4 mr-2" />
+    <div className="flex flex-col min-h-screen">
+      <header className="px-4 lg:px-6 h-14 flex items-center justify-between bg-white shadow-sm">
+        <Link href="#" className="flex items-center justify-center gap-2 font-bold text-lg" prefetch={false}>
+          <ShoppingCart className="h-6 w-6 text-green-600" />
+          SathiBazaar
+        </Link>
+        <nav className="hidden md:flex gap-4 sm:gap-6">
+          <Link href="#features" className="text-sm font-medium hover:underline underline-offset-4" prefetch={false}>
+            Features
+          </Link>
+          <Link
+            href="#how-it-works"
+            className="text-sm font-medium hover:underline underline-offset-4"
+            prefetch={false}
+          >
+            How it Works
+          </Link>
+          <Link
+            href="#testimonials"
+            className="text-sm font-medium hover:underline underline-offset-4"
+            prefetch={false}
+          >
+            Testimonials
+          </Link>
+          <Link href="#contact" className="text-sm font-medium hover:underline underline-offset-4" prefetch={false}>
+            Contact
+          </Link>
+        </nav>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="md:hidden bg-transparent">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>
+                <Link href="#features" className="w-full" prefetch={false}>
+                  Features
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="#how-it-works" className="w-full" prefetch={false}>
+                  How it Works
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="#testimonials" className="w-full" prefetch={false}>
+                  Testimonials
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="#contact" className="w-full" prefetch={false}>
+                  Contact
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <Link href="/vendor/login" className="w-full" prefetch={false}>
+                  Vendor Login
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/supplier/login" className="w-full" prefetch={false}>
+                  Supplier Login
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <div className="hidden md:flex gap-2">
+            <Button variant="outline" asChild>
+              <Link href="/vendor/login" prefetch={false}>
                 Vendor Login
-              </Button>
-            </Link>
-            <Link href="/supplier/dashboard">
-              <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg">
-                <Truck className="h-4 w-4 mr-2" />
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/supplier/login" prefetch={false}>
                 Supplier Login
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative py-20 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-blue-50 to-purple-50"></div>
-        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-
-        <div className="container mx-auto text-center relative z-10">
-          <Badge className="mb-6 bg-green-100 text-green-800 border-green-200 px-4 py-2">
-            <Zap className="h-4 w-4 mr-2" />
-            Save up to 40% on raw materials
-          </Badge>
-
-          <h2 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-            Group Orders,{" "}
-            <span className="bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Better Prices
-            </span>
-          </h2>
-
-          <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Join fellow street food vendors to bulk order raw materials and get amazing discounts from local suppliers.
-            <span className="font-semibold text-green-600"> Start saving today!</span>
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link href="/vendor/dashboard">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 px-8 py-4 text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-200"
-              >
-                <Users className="h-5 w-5 mr-2" />
-                Start as Vendor
-                <ArrowRight className="h-5 w-5 ml-2" />
-              </Button>
-            </Link>
-            <Link href="/supplier/dashboard">
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-4 text-lg bg-white/80 backdrop-blur-sm hover:shadow-xl transform hover:scale-105 transition-all duration-200"
-              >
-                <Truck className="h-5 w-5 mr-2" />
-                Join as Supplier
-              </Button>
-            </Link>
-          </div>
-
-          {/* Demo Video Button */}
-          <div className="flex justify-center mb-16">
-            <Button variant="ghost" className="text-gray-600 hover:text-gray-800 group">
-              <div className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center mr-3 group-hover:shadow-xl transition-shadow">
-                <Play className="h-5 w-5 text-blue-600 ml-1" />
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-r from-green-50 to-green-100">
+          <div className="container px-4 md:px-6 grid lg:grid-cols-2 gap-10 items-center">
+            <div className="space-y-4 text-center lg:text-left">
+              <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl leading-tight">
+                Empower Your Business with Group Buying
+              </h1>
+              <p className="max-w-[600px] text-gray-600 md:text-xl mx-auto lg:mx-0">
+                SathiBazaar connects street food vendors for bulk purchases, ensuring better prices and fresh produce.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                <Button asChild size="lg" className="bg-green-600 hover:bg-green-700 text-white">
+                  <Link href="/vendor/signup" prefetch={false}>
+                    Start as Vendor
+                  </Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  asChild
+                  size="lg"
+                  className="border-green-600 text-green-600 hover:bg-green-50 bg-transparent"
+                >
+                  <Link href="/supplier/signup" prefetch={false}>
+                    Join as Supplier
+                  </Link>
+                </Button>
               </div>
-              Watch how it works (2 min)
-            </Button>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="w-16 h-16 bg-white rounded-2xl shadow-lg flex items-center justify-center mx-auto mb-3">
-                  <stat.icon className="h-8 w-8 text-blue-600" />
-                </div>
-                <div className="text-2xl md:text-3xl font-bold text-gray-900">{stat.value}</div>
-                <div className="text-sm text-gray-600">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How it Works */}
-      <section className="py-20 px-4 bg-white">
-        <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-blue-100 text-blue-800 border-blue-200">Simple Process</Badge>
-            <h3 className="text-4xl md:text-5xl font-bold mb-6">How SathiBazaar Works</h3>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Get started in minutes and start saving on your raw material costs immediately
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
-            <Card className="text-center p-8 hover:shadow-xl transition-all duration-300 border-0 shadow-lg group hover:scale-105">
-              <CardContent className="pt-6">
-                <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                  <Users className="h-10 w-10 text-white" />
-                </div>
-                <div className="w-8 h-1 bg-green-500 mx-auto mb-4"></div>
-                <h4 className="text-2xl font-bold mb-4">1. Join Group Orders</h4>
-                <p className="text-gray-600 leading-relaxed">
-                  Find nearby vendors ordering the same raw materials and join their group to unlock bulk pricing.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center p-8 hover:shadow-xl transition-all duration-300 border-0 shadow-lg group hover:scale-105">
-              <CardContent className="pt-6">
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                  <TrendingDown className="h-10 w-10 text-white" />
-                </div>
-                <div className="w-8 h-1 bg-blue-500 mx-auto mb-4"></div>
-                <h4 className="text-2xl font-bold mb-4">2. Get Bulk Discounts</h4>
-                <p className="text-gray-600 leading-relaxed">
-                  Watch prices drop automatically as more vendors join your group order. More vendors = better prices!
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center p-8 hover:shadow-xl transition-all duration-300 border-0 shadow-lg group hover:scale-105">
-              <CardContent className="pt-6">
-                <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                  <Target className="h-10 w-10 text-white" />
-                </div>
-                <div className="w-8 h-1 bg-purple-500 mx-auto mb-4"></div>
-                <h4 className="text-2xl font-bold mb-4">3. Pickup Your Order</h4>
-                <p className="text-gray-600 leading-relaxed">
-                  Collect your discounted raw materials from the designated pickup point at your convenient time.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Process Flow */}
-          <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-3xl p-8 md:p-12">
-            <div className="flex flex-col md:flex-row items-center justify-between space-y-8 md:space-y-0">
-              <div className="text-center md:text-left">
-                <h4 className="text-2xl font-bold mb-4">Ready to start saving?</h4>
-                <p className="text-gray-600 mb-6">Join thousands of vendors already saving money</p>
-                <Link href="/vendor/dashboard">
-                  <Button className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg">
-                    Get Started Now
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
-              <div className="text-6xl">🚀</div>
+            </div>
+            <div className="flex justify-center">
+              <Image
+                src="/hero-group-buying.png" // Attractive image related to group buying
+                width={600}
+                height={400}
+                alt="Group buying for street food vendors"
+                className="rounded-xl shadow-lg object-cover"
+              />
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Features Section */}
-      <section className="py-20 px-4 bg-gradient-to-br from-gray-50 to-white">
-        <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-purple-100 text-purple-800 border-purple-200">Why Choose Us</Badge>
-            <h3 className="text-4xl md:text-5xl font-bold mb-6">Powerful Features</h3>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Everything you need to save money and grow your street food business
-            </p>
+        {/* Features Section */}
+        <section id="features" className="w-full py-12 md:py-24 lg:py-32 bg-white">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Why Choose SathiBazaar?</h2>
+                <p className="max-w-[900px] text-gray-600 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                  Unlock a world of benefits designed specifically for street food vendors and suppliers.
+                </p>
+              </div>
+            </div>
+            <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:grid-cols-3 lg:gap-10 py-12">
+              <Card className="flex flex-col items-center p-6 text-center shadow-md hover:shadow-lg transition-shadow">
+                <CircleDollarSign className="h-10 w-10 text-green-600 mb-4" />
+                <CardTitle className="text-xl font-bold mb-2">Cost Savings</CardTitle>
+                <CardDescription>
+                  Access bulk pricing by pooling orders with other vendors, significantly reducing your procurement
+                  costs.
+                </CardDescription>
+              </Card>
+              <Card className="flex flex-col items-center p-6 text-center shadow-md hover:shadow-lg transition-shadow">
+                <Users className="h-10 w-10 text-green-600 mb-4" />
+                <CardTitle className="text-xl font-bold mb-2">Community Driven</CardTitle>
+                <CardDescription>Join a network of local vendors, share insights, and grow together.</CardDescription>
+              </Card>
+              <Card className="flex flex-col items-center p-6 text-center shadow-md hover:shadow-lg transition-shadow">
+                <Truck className="h-10 w-10 text-green-600 mb-4" />
+                <CardTitle className="text-xl font-bold mb-2">Optimized Logistics</CardTitle>
+                <CardDescription>
+                  Streamlined delivery processes ensure fresh produce reaches you efficiently and on time.
+                </CardDescription>
+              </Card>
+              <Card className="flex flex-col items-center p-6 text-center shadow-md hover:shadow-lg transition-shadow">
+                <BarChart className="h-10 w-10 text-green-600 mb-4" />
+                <CardTitle className="text-xl font-bold mb-2">Smart Insights</CardTitle>
+                <CardDescription>
+                  Gain valuable data on popular products and purchasing trends to make informed decisions.
+                </CardDescription>
+              </Card>
+              <Card className="flex flex-col items-center p-6 text-center shadow-md hover:shadow-lg transition-shadow">
+                <CheckCircle className="h-10 w-10 text-green-600 mb-4" />
+                <CardTitle className="text-xl font-bold mb-2">Quality Assurance</CardTitle>
+                <CardDescription>
+                  We partner with trusted suppliers to ensure you receive only the freshest and highest quality
+                  ingredients.
+                </CardDescription>
+              </Card>
+              <Card className="flex flex-col items-center p-6 text-center shadow-md hover:shadow-lg transition-shadow">
+                <ShoppingCart className="h-10 w-10 text-green-600 mb-4" />
+                <CardTitle className="text-xl font-bold mb-2">Easy Ordering</CardTitle>
+                <CardDescription>
+                  Our intuitive platform makes placing and managing group orders simple and hassle-free.
+                </CardDescription>
+              </Card>
+            </div>
           </div>
+        </section>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <Card
-                key={index}
-                className="p-6 hover:shadow-xl transition-all duration-300 border-0 shadow-lg group hover:scale-105"
+        {/* How It Works Section */}
+        <section id="how-it-works" className="w-full py-12 md:py-24 lg:py-32 bg-green-50">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">How SathiBazaar Works</h2>
+                <p className="max-w-[900px] text-gray-600 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                  A simple, step-by-step guide to getting the most out of our platform.
+                </p>
+              </div>
+            </div>
+            <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 py-12">
+              <Card className="flex flex-col items-center p-6 text-center shadow-md">
+                <div className="flex items-center justify-center h-12 w-12 rounded-full bg-green-600 text-white text-xl font-bold mb-4">
+                  1
+                </div>
+                <CardTitle className="text-xl font-bold mb-2">Create or Join a Group Order</CardTitle>
+                <CardDescription>
+                  Vendors can initiate new group orders for specific produce or join existing ones to meet minimum
+                  quantities.
+                </CardDescription>
+              </Card>
+              <Card className="flex flex-col items-center p-6 text-center shadow-md">
+                <div className="flex items-center justify-center h-12 w-12 rounded-full bg-green-600 text-white text-xl font-bold mb-4">
+                  2
+                </div>
+                <CardTitle className="text-xl font-bold mb-2">Suppliers Fulfill Orders</CardTitle>
+                <CardDescription>
+                  Verified suppliers receive consolidated orders and prepare for efficient bulk delivery.
+                </CardDescription>
+              </Card>
+              <Card className="flex flex-col items-center p-6 text-center shadow-md">
+                <div className="flex items-center justify-center h-12 w-12 rounded-full bg-green-600 text-white text-xl font-bold mb-4">
+                  3
+                </div>
+                <CardTitle className="text-xl font-bold mb-2">Receive & Review</CardTitle>
+                <CardDescription>
+                  Vendors receive their fresh produce and can provide feedback on supplier performance.
+                </CardDescription>
+              </Card>
+            </div>
+            <div className="flex justify-center mt-8">
+              <Button
+                variant="outline"
+                size="lg"
+                className="border-green-600 text-green-600 hover:bg-green-100 bg-transparent"
               >
-                <CardContent className="pt-6">
-                  <div
-                    className={`w-14 h-14 ${feature.color} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}
-                  >
-                    <feature.icon className="h-7 w-7 text-white" />
-                  </div>
-                  <h4 className="text-xl font-bold mb-3">{feature.title}</h4>
-                  <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                Watch how it works <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials Section */}
+        <section id="testimonials" className="w-full py-12 md:py-24 lg:py-32 bg-white">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">What Our Users Say</h2>
+                <p className="max-w-[900px] text-gray-600 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                  Hear from vendors and suppliers who have transformed their businesses with SathiBazaar.
+                </p>
+              </div>
+            </div>
+            <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 py-12">
+              <Card className="p-6 shadow-md hover:shadow-lg transition-shadow">
+                <CardContent className="flex flex-col items-center text-center p-0">
+                  <Image
+                    src="/testimonial-rajesh.png" // User image
+                    width={80}
+                    height={80}
+                    alt="Rajesh Kumar"
+                    className="rounded-full mb-4 object-cover"
+                  />
+                  <p className="text-lg font-semibold mb-2">"SathiBazaar has revolutionized my procurement!"</p>
+                  <p className="text-gray-700 mb-4">
+                    "I used to spend hours sourcing produce, but now with group orders, I save so much time and money.
+                    The quality is consistently excellent."
+                  </p>
+                  <p className="text-sm font-medium text-gray-500">- Rajesh Kumar, Street Food Vendor</p>
                 </CardContent>
               </Card>
-            ))}
+              <Card className="p-6 shadow-md hover:shadow-lg transition-shadow">
+                <CardContent className="flex flex-col items-center text-center p-0">
+                  <Image
+                    src="/testimonial-priya.png" // User image
+                    width={80}
+                    height={80}
+                    alt="Priya Sharma"
+                    className="rounded-full mb-4 object-cover"
+                  />
+                  <p className="text-lg font-semibold mb-2">"Efficient and reliable platform for suppliers."</p>
+                  <p className="text-gray-700 mb-4">
+                    "Managing bulk orders through SathiBazaar is seamless. It helps me reach more vendors and optimize
+                    my delivery routes. Highly recommended!"
+                  </p>
+                  <p className="text-sm font-medium text-gray-500">- Priya Sharma, Vegetable Supplier</p>
+                </CardContent>
+              </Card>
+              <Card className="p-6 shadow-md hover:shadow-lg transition-shadow">
+                <CardContent className="flex flex-col items-center text-center p-0">
+                  <Image
+                    src="/testimonial-suresh.png" // User image
+                    width={80}
+                    height={80}
+                    alt="Suresh Singh"
+                    className="rounded-full mb-4 object-cover"
+                  />
+                  <p className="text-lg font-semibold mb-2">"Better prices, better quality, happier customers."</p>
+                  <p className="text-gray-700 mb-4">
+                    "The savings I get from SathiBazaar allow me to invest more in my food quality. My customers notice
+                    the difference, and my business is thriving."
+                  </p>
+                  <p className="text-sm font-medium text-gray-500">- Suresh Singh, Chaat Stall Owner</p>
+                </CardContent>
+              </Card>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Testimonials */}
-      <section className="py-20 px-4 bg-white">
-        <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-yellow-100 text-yellow-800 border-yellow-200">Success Stories</Badge>
-            <h3 className="text-4xl md:text-5xl font-bold mb-6">What Our Users Say</h3>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Real stories from vendors and suppliers who are saving money with SathiBazaar
+        {/* Call to Action / Newsletter Section */}
+        <section id="contact" className="w-full py-12 md:py-24 lg:py-32 bg-green-100">
+          <div className="container px-4 md:px-6 text-center space-y-6">
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Ready to Grow Your Business?</h2>
+            <p className="max-w-[700px] text-gray-600 md:text-xl mx-auto">
+              Join SathiBazaar today and experience the power of collective buying and selling. Subscribe to our
+              newsletter for updates!
             </p>
-          </div>
-
-          <div className="max-w-4xl mx-auto">
-            <Card className="p-8 md:p-12 shadow-2xl border-0 bg-gradient-to-br from-white to-gray-50">
-              <CardContent className="pt-6">
-                <div className="flex items-center mb-6">
-                  {[...Array(testimonials[currentTestimonial].rating)].map((_, i) => (
-                    <Star key={i} className="h-6 w-6 text-yellow-400 fill-current" />
-                  ))}
-                </div>
-
-                <blockquote className="text-xl md:text-2xl text-gray-700 mb-8 leading-relaxed italic">
-                  "{testimonials[currentTestimonial].text}"
-                </blockquote>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center mr-4">
-                      <span className="text-white font-bold text-xl">{testimonials[currentTestimonial].image}</span>
-                    </div>
-                    <div>
-                      <p className="font-bold text-lg">{testimonials[currentTestimonial].name}</p>
-                      <p className="text-gray-600">{testimonials[currentTestimonial].role}</p>
-                      <p className="text-sm text-gray-500">{testimonials[currentTestimonial].location}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <Badge className="bg-green-100 text-green-800 text-lg px-4 py-2">
-                      Saved {testimonials[currentTestimonial].savings}
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Testimonial Navigation */}
-            <div className="flex justify-center mt-8 space-x-2">
-              {testimonials.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentTestimonial(index)}
-                  className={`w-3 h-3 rounded-full transition-all ${
-                    index === currentTestimonial ? "bg-green-600 w-8" : "bg-gray-300"
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-green-600 via-blue-600 to-purple-600">
-        <div className="container mx-auto text-center text-white">
-          <h3 className="text-4xl md:text-5xl font-bold mb-6">Ready to Transform Your Business?</h3>
-          <p className="text-xl md:text-2xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Join thousands of vendors who are already saving money and growing their businesses with SathiBazaar
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/vendor/dashboard">
-              <Button
-                size="lg"
-                className="bg-white text-green-600 hover:bg-gray-100 px-8 py-4 text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-200"
-              >
-                <Users className="h-5 w-5 mr-2" />
-                Start Saving Today
+            <form onSubmit={handleNewsletterSignup} className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+              <Input
+                type="email"
+                placeholder="Enter your email"
+                className="flex-1 px-4 py-2 rounded-md border border-gray-300 focus:ring-green-500 focus:border-green-500"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md">
+                Subscribe
               </Button>
-            </Link>
-            <Link href="/supplier/dashboard">
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 text-lg bg-transparent backdrop-blur-sm hover:shadow-xl transform hover:scale-105 transition-all duration-200"
-              >
-                <Truck className="h-5 w-5 mr-2" />
-                Become a Supplier
-              </Button>
-            </Link>
+            </form>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-16 px-4">
-        <div className="container mx-auto">
-          <div className="grid md:grid-cols-4 gap-8 mb-12">
-            <div>
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-500 rounded-xl flex items-center justify-center">
-                  <ShoppingCart className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <span className="text-2xl font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
-                    SathiBazaar
-                  </span>
-                  <p className="text-xs text-gray-400">Smart Group Buying</p>
-                </div>
-              </div>
-              <p className="text-gray-400 leading-relaxed">
-                Connecting street food vendors for better bulk purchasing power and helping businesses grow together.
-              </p>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-6 text-lg">Quick Links</h4>
-              <ul className="space-y-3 text-gray-400">
-                <li>
-                  <Link href="/about" className="hover:text-white transition-colors">
-                    About Us
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/how-it-works" className="hover:text-white transition-colors">
-                    How it Works
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/pricing" className="hover:text-white transition-colors">
-                    Pricing
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/support" className="hover:text-white transition-colors">
-                    Support
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-6 text-lg">For Vendors</h4>
-              <ul className="space-y-3 text-gray-400">
-                <li>
-                  <Link href="/vendor/signup" className="hover:text-white transition-colors">
-                    Sign Up
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/vendor/dashboard" className="hover:text-white transition-colors">
-                    Login
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/vendor/help" className="hover:text-white transition-colors">
-                    Help Center
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/vendor/success-stories" className="hover:text-white transition-colors">
-                    Success Stories
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-6 text-lg">Contact</h4>
-              <ul className="space-y-3 text-gray-400">
-                <li className="flex items-center">
-                  <Phone className="h-4 w-4 mr-3 text-green-400" /> +91 98765 43210
-                </li>
-                <li className="flex items-center">
-                  <Mail className="h-4 w-4 mr-3 text-green-400" /> support@sathibazaar.com
-                </li>
-                <li className="flex items-center">
-                  <MapPin className="h-4 w-4 mr-3 text-green-400" /> Delhi, India
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 SathiBazaar. All rights reserved. Made with ❤️ for street food vendors.</p>
-          </div>
-        </div>
+      <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t bg-white">
+        <p className="text-xs text-gray-500">&copy; 2024 SathiBazaar. All rights reserved.</p>
+        <nav className="sm:ml-auto flex gap-4 sm:gap-6">
+          <Link href="#" className="text-xs hover:underline underline-offset-4" prefetch={false}>
+            Terms of Service
+          </Link>
+          <Link href="#" className="text-xs hover:underline underline-offset-4" prefetch={false}>
+            Privacy
+          </Link>
+        </nav>
       </footer>
     </div>
   )
 }
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"

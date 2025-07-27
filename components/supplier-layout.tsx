@@ -2,88 +2,218 @@
 
 import type React from "react"
 
+import Link from "next/link"
+import { Bell, CircleUser, Home, Menu, ShoppingCart, Package, Truck, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
-import { Home, Package, ShoppingBag, Truck, Star, ShoppingCart, LogOut, Bell } from "lucide-react"
-import Link from "next/link"
-
-const supplierMenuItems = [
-  { title: "Dashboard", url: "/supplier/dashboard", icon: Home },
-  { title: "Add Products", url: "/supplier/products", icon: Package },
-  { title: "Incoming Orders", url: "/supplier/orders", icon: ShoppingBag },
-  { title: "Delivery Schedule", url: "/supplier/delivery", icon: Truck },
-  { title: "Reviews", url: "/supplier/reviews", icon: Star },
-]
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState } from "react"
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 
 export default function SupplierLayout({ children }: { children: React.ReactNode }) {
+  const [language, setLanguage] = useState("en") // Default language
+
+  const translations: { [key: string]: { [key: string]: string } } = {
+    en: {
+      dashboard: "Dashboard",
+      products: "My Products",
+      incomingOrders: "Incoming Orders",
+      deliverySchedule: "Delivery Schedule",
+      reviews: "Reviews",
+      settings: "Settings",
+      logout: "Logout",
+      selectLanguage: "Select Language",
+      english: "English",
+      hindi: "Hindi",
+    },
+    hi: {
+      dashboard: "डैशबोर्ड",
+      products: "मेरे उत्पाद",
+      incomingOrders: "आने वाले ऑर्डर",
+      deliverySchedule: "डिलीवरी शेड्यूल",
+      reviews: "समीक्षाएं",
+      settings: "सेटिंग्स",
+      logout: "लॉग आउट",
+      selectLanguage: "भाषा चुनें",
+      english: "अंग्रेज़ी",
+      hindi: "हिंदी",
+    },
+  }
+
+  const t = translations[language]
+
   return (
-    <SidebarProvider>
-      <Sidebar className="border-r border-blue-200">
-        <SidebarHeader>
-          <div className="flex items-center space-x-2 px-4 py-2">
-            <ShoppingCart className="h-6 w-6 text-blue-600" />
-            <span className="text-lg font-bold">SathiBazaar</span>
+    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+      <div className="hidden border-r bg-muted/40 md:block">
+        <div className="flex h-full max-h-screen flex-col gap-2">
+          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+            <Link href="/" className="flex items-center gap-2 font-semibold">
+              <ShoppingCart className="h-6 w-6" />
+              <span className="">SathiBazaar</span>
+            </Link>
+            <Button variant="outline" size="icon" className="ml-auto h-8 w-8 bg-transparent">
+              <Bell className="h-4 w-4" />
+              <span className="sr-only">Toggle notifications</span>
+            </Button>
           </div>
-          <div className="px-4 py-2 bg-blue-50 rounded-lg mx-4">
-            <p className="text-sm font-medium text-blue-800">Supplier Panel</p>
-            <p className="text-xs text-blue-600">Suresh Vegetables</p>
+          <div className="flex-1">
+            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+              <Link
+                href="/supplier/dashboard"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+              >
+                <Home className="h-4 w-4" />
+                {t.dashboard}
+              </Link>
+              <Link
+                href="/supplier/products"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+              >
+                <Package className="h-4 w-4" />
+                {t.products}
+              </Link>
+              <Link
+                href="/supplier/orders"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                {t.incomingOrders}
+              </Link>
+              <Link
+                href="/supplier/delivery"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+              >
+                <Truck className="h-4 w-4" />
+                {t.deliverySchedule}
+              </Link>
+              <Link
+                href="/supplier/reviews"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+              >
+                <Star className="h-4 w-4" />
+                {t.reviews}
+              </Link>
+            </nav>
           </div>
-        </SidebarHeader>
-
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {supplierMenuItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <Link href={item.url} className="flex items-center space-x-2">
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-
-        <SidebarFooter>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton>
-                <LogOut className="h-4 w-4" />
-                <span>Logout</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
-      </Sidebar>
-
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <div className="flex-1" />
-          <Button variant="ghost" size="icon">
-            <Bell className="h-4 w-4" />
-          </Button>
+          <div className="mt-auto p-4">
+            <Card>
+              <CardHeader className="p-2 pt-0 md:p-4">
+                <CardTitle>{t.selectLanguage}</CardTitle>
+                <CardDescription>
+                  <Select value={language} onValueChange={setLanguage}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder={t.selectLanguage} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">{t.english}</SelectItem>
+                      <SelectItem value="hi">{t.hindi}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-col">
+        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="shrink-0 md:hidden bg-transparent">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle navigation menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="flex flex-col">
+              <nav className="grid gap-2 text-lg font-medium">
+                <Link href="#" className="flex items-center gap-2 text-lg font-semibold">
+                  <ShoppingCart className="h-6 w-6" />
+                  <span className="sr-only">SathiBazaar</span>
+                </Link>
+                <Link
+                  href="/supplier/dashboard"
+                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Home className="h-5 w-5" />
+                  {t.dashboard}
+                </Link>
+                <Link
+                  href="/supplier/products"
+                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Package className="h-5 w-5" />
+                  {t.products}
+                </Link>
+                <Link
+                  href="/supplier/orders"
+                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                  {t.incomingOrders}
+                </Link>
+                <Link
+                  href="/supplier/delivery"
+                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Truck className="h-5 w-5" />
+                  {t.deliverySchedule}
+                </Link>
+                <Link
+                  href="/supplier/reviews"
+                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Star className="h-5 w-5" />
+                  {t.reviews}
+                </Link>
+              </nav>
+              <div className="mt-auto">
+                <Card>
+                  <CardHeader className="p-2 pt-0 md:p-4">
+                    <CardTitle>{t.selectLanguage}</CardTitle>
+                    <CardDescription>
+                      <Select value={language} onValueChange={setLanguage}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder={t.selectLanguage} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="en">{t.english}</SelectItem>
+                          <SelectItem value="hi">{t.hindi}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              </div>
+            </SheetContent>
+          </Sheet>
+          <div className="w-full flex-1">{/* Search or other header content can go here */}</div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" size="icon" className="rounded-full">
+                <CircleUser className="h-5 w-5" />
+                <span className="sr-only">Toggle user menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>{t.settings}</DropdownMenuItem>
+              <DropdownMenuItem>Help</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>{t.logout}</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </header>
-        <main className="flex-1 p-6">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">{children}</main>
+      </div>
+    </div>
   )
 }

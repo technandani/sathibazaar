@@ -1,7 +1,5 @@
 "use client"
 
-import { Label } from "@/components/ui/label"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,77 +7,115 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { History, Calendar, Filter } from "lucide-react"
+import { Search, Filter, Package, Clock, CheckCircle, XCircle, Truck, Eye } from "lucide-react"
 import VendorLayout from "@/components/vendor-layout"
+import { Progress } from "@/components/ui/progress"
 
-const orderHistory = [
+type Order = {
+  id: string
+  item: string
+  quantity: string
+  supplier: string
+  orderDate: string
+  pickupDate: string
+  status: "Processing" | "Shipped" | "Delivered" | "Cancelled"
+  trackingProgress: number // 0-100
+}
+
+const allOrders: Order[] = [
   {
-    id: "GO-001",
+    id: "ORD-001",
     item: "Onions",
     quantity: "50 kg",
-    finalPrice: "₹1250",
-    status: "Completed",
-    date: "2024-07-20",
-    supplier: "Suresh Vegetables",
+    supplier: "Fresh Veggies Co.",
+    orderDate: "2024-07-20",
+    pickupDate: "2024-07-22",
+    status: "Delivered",
+    trackingProgress: 100,
   },
   {
-    id: "GO-002",
+    id: "ORD-002",
     item: "Tomatoes",
     quantity: "30 kg",
-    finalPrice: "₹1050",
-    status: "Completed",
-    date: "2024-07-18",
-    supplier: "Fresh Mart",
+    supplier: "Green Farms",
+    orderDate: "2024-07-25",
+    pickupDate: "2024-07-27",
+    status: "Shipped",
+    trackingProgress: 75,
   },
   {
-    id: "GO-003",
+    id: "ORD-003",
     item: "Potatoes",
-    quantity: "20 kg",
-    finalPrice: "₹360",
-    status: "Cancelled",
-    date: "2024-07-15",
-    supplier: "Green Valley",
+    quantity: "100 kg",
+    supplier: "Bulk Produce",
+    orderDate: "2024-07-26",
+    pickupDate: "2024-07-28",
+    status: "Processing",
+    trackingProgress: 25,
   },
   {
-    id: "GO-004",
-    item: "Green Chili",
-    quantity: "5 kg",
-    finalPrice: "₹350",
-    status: "Completed",
-    date: "2024-07-10",
-    supplier: "Local Farms",
-  },
-  {
-    id: "GO-005",
+    id: "ORD-004",
     item: "Cabbage",
-    quantity: "10 pieces",
-    finalPrice: "₹200",
-    status: "Pending Pickup",
-    date: "2024-07-26",
-    supplier: "Suresh Vegetables",
+    quantity: "20 pieces",
+    supplier: "Local Harvest",
+    orderDate: "2024-07-24",
+    pickupDate: "2024-07-26",
+    status: "Cancelled",
+    trackingProgress: 0,
+  },
+  {
+    id: "ORD-005",
+    item: "Ginger",
+    quantity: "10 kg",
+    supplier: "Spice Route",
+    orderDate: "2024-07-27",
+    pickupDate: "2024-07-29",
+    status: "Processing",
+    trackingProgress: 10,
   },
 ]
 
 export default function VendorOrderHistoryPage() {
+  const [orders, setOrders] = useState<Order[]>(allOrders)
+  const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("All")
-  const [filterDate, setFilterDate] = useState("")
 
-  const filteredOrders = orderHistory.filter((order) => {
+  const filteredOrders = orders.filter((order) => {
+    const searchMatch =
+      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.item.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.supplier.toLowerCase().includes(searchTerm.toLowerCase())
     const statusMatch = filterStatus === "All" || order.status === filterStatus
-    const dateMatch = filterDate === "" || order.date === filterDate
-    return statusMatch && dateMatch
+    return searchMatch && statusMatch
   })
 
-  const getStatusBadgeVariant = (status: string) => {
+  const getStatusBadgeVariant = (status: Order["status"]) => {
     switch (status) {
-      case "Completed":
+      case "Processing":
+        return "secondary"
+      case "Shipped":
         return "default"
+      case "Delivered":
+        return "success" // Assuming 'success' variant exists or can be styled
       case "Cancelled":
         return "destructive"
-      case "Pending Pickup":
-        return "secondary"
       default:
         return "outline"
+    }
+  }
+
+  const getStatusIcon = (status: Order["status"]) => {
+    switch (status) {
+      case "Processing":
+        return <Clock className="h-4 w-4 text-blue-500" />
+      case "Shipped":
+        return <Truck className="h-4 w-4 text-orange-500" />
+      case "Delivered":
+        return <CheckCircle className="h-4 w-4 text-green-500" />
+      case "Cancelled":
+        return <XCircle className="h-4 w-4 text-red-500" />
+      default:
+        return null
     }
   }
 
@@ -88,49 +124,45 @@ export default function VendorOrderHistoryPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold mb-2">Order History</h1>
-          <p className="text-gray-600">View your past group orders and their current status.</p>
+          <p className="text-gray-600">View your past and current group orders.</p>
         </div>
 
-        {/* Filters */}
+        {/* Filters and Search */}
         <Card>
-          <CardContent className="pt-6 flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 space-y-2">
-              <Label htmlFor="status-filter">Filter by Status</Label>
+          <CardContent className="pt-6 flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+              <Input
+                placeholder="Search by Order ID, Item, Supplier..."
+                className="pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex-1">
               <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger id="status-filter">
-                  <SelectValue placeholder="All Statuses" />
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="All">All Statuses</SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
-                  <SelectItem value="Pending Pickup">Pending Pickup</SelectItem>
+                  <SelectItem value="Processing">Processing</SelectItem>
+                  <SelectItem value="Shipped">Shipped</SelectItem>
+                  <SelectItem value="Delivered">Delivered</SelectItem>
                   <SelectItem value="Cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="flex-1 space-y-2">
-              <Label htmlFor="date-filter">Filter by Date</Label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                <Input
-                  id="date-filter"
-                  type="date"
-                  className="pl-9"
-                  value={filterDate}
-                  onChange={(e) => setFilterDate(e.target.value)}
-                />
-              </div>
             </div>
             <div className="flex items-end">
               <Button
                 variant="outline"
                 onClick={() => {
+                  setSearchTerm("")
                   setFilterStatus("All")
-                  setFilterDate("")
                 }}
               >
                 <Filter className="h-4 w-4 mr-2" />
-                Reset Filters
+                Reset
               </Button>
             </div>
           </CardContent>
@@ -140,10 +172,10 @@ export default function VendorOrderHistoryPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <History className="h-5 w-5 mr-2" />
-              Your Past Orders
+              <Package className="h-5 w-5 mr-2" />
+              Your Orders
             </CardTitle>
-            <CardDescription>A list of all your group orders.</CardDescription>
+            <CardDescription>Details of your group orders.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -153,17 +185,18 @@ export default function VendorOrderHistoryPage() {
                     <TableHead>Order ID</TableHead>
                     <TableHead>Item</TableHead>
                     <TableHead>Quantity</TableHead>
-                    <TableHead>Final Price</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
                     <TableHead>Supplier</TableHead>
+                    <TableHead>Order Date</TableHead>
+                    <TableHead>Pickup Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Tracking Progress</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredOrders.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center text-gray-500">
+                      <TableCell colSpan={9} className="text-center text-gray-500">
                         No orders found matching your criteria.
                       </TableCell>
                     </TableRow>
@@ -173,15 +206,24 @@ export default function VendorOrderHistoryPage() {
                         <TableCell className="font-medium">{order.id}</TableCell>
                         <TableCell>{order.item}</TableCell>
                         <TableCell>{order.quantity}</TableCell>
-                        <TableCell className="font-semibold">{order.finalPrice}</TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusBadgeVariant(order.status)}>{order.status}</Badge>
-                        </TableCell>
-                        <TableCell>{order.date}</TableCell>
                         <TableCell>{order.supplier}</TableCell>
+                        <TableCell>{order.orderDate}</TableCell>
+                        <TableCell>{order.pickupDate}</TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm">
-                            View Details
+                          <Badge variant={getStatusBadgeVariant(order.status)} className="flex items-center gap-1">
+                            {getStatusIcon(order.status)}
+                            {order.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Progress value={order.trackingProgress} className="w-[100px]" />
+                            <span className="text-sm text-gray-600">{order.trackingProgress}%</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="outline" size="icon" title="View Details">
+                            <Eye className="h-4 w-4" />
                           </Button>
                         </TableCell>
                       </TableRow>
