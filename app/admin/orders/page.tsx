@@ -1,101 +1,61 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ShoppingBag, Search, Filter, Eye } from "lucide-react"
+import { ShoppingBag, Search, Filter, Eye, Loader2 } from "lucide-react"
 import AdminLayout from "@/components/admin-layout"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { useToast } from "@/components/ui/use-toast"
+import type { Order as OrderType } from "@/lib/db" // Import OrderType from lib/db
 
 type OrderStatus = "Completed" | "Pending" | "In Progress" | "Pending Pickup" | "Cancelled"
 
-type OrderData = {
-  id: string
-  item: string
-  quantity: string
-  totalAmount: string
-  vendor: string
-  supplier: string
-  status: OrderStatus
-  date: string
-}
-
-const allOrders: OrderData[] = [
-  {
-    id: "GO-001",
-    item: "Onions",
-    quantity: "150 kg",
-    totalAmount: "₹3750",
-    vendor: "Rajesh Kumar",
-    supplier: "Suresh Vegetables",
-    status: "Completed",
-    date: "2024-07-20",
-  },
-  {
-    id: "GO-002",
-    item: "Tomatoes",
-    quantity: "200 kg",
-    totalAmount: "₹7000",
-    vendor: "Priya Sharma",
-    supplier: "Fresh Mart",
-    status: "Pending",
-    date: "2024-07-26",
-  },
-  {
-    id: "GO-003",
-    item: "Potatoes",
-    quantity: "100 kg",
-    totalAmount: "₹1800",
-    vendor: "Amit Singh",
-    supplier: "Green Valley",
-    status: "In Progress",
-    date: "2024-07-25",
-  },
-  {
-    id: "GO-004",
-    item: "Ginger",
-    quantity: "50 kg",
-    totalAmount: "₹4000",
-    vendor: "Kiran Devi",
-    supplier: "Local Farms",
-    status: "Completed",
-    date: "2024-07-22",
-  },
-  {
-    id: "GO-005",
-    item: "Cabbage",
-    quantity: "20 pieces",
-    totalAmount: "₹500",
-    vendor: "Sunil Kumar",
-    supplier: "Suresh Vegetables",
-    status: "Pending Pickup",
-    date: "2024-07-27",
-  },
-  {
-    id: "GO-006",
-    item: "Spinach",
-    quantity: "30 bunches",
-    totalAmount: "₹450",
-    vendor: "Rajesh Kumar",
-    supplier: "Green Valley",
-    status: "Cancelled",
-    date: "2024-07-28",
-  },
-]
-
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState<OrderData[]>(allOrders)
+  const [orders, setOrders] = useState<OrderType[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("All")
   const [filterDate, setFilterDate] = useState("")
 
   const [isViewDetailsOpen, setIsViewDetailsOpen] = useState(false)
-  const [selectedOrder, setSelectedOrder] = useState<OrderData | null>(null)
+  const [selectedOrder, setSelectedOrder] = useState<OrderType | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const { toast } = useToast()
+
+  useEffect(() => {
+    fetchOrders()
+  }, [])
+
+  const fetchOrders = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/orders")
+      if (response.ok) {
+        const data: OrderType[] = await response.json()
+        setOrders(data)
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to fetch orders.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Failed to fetch orders:", error)
+      toast({
+        title: "Error",
+        description: "Could not connect to the server to fetch orders.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const filteredOrders = orders.filter((order) => {
     const searchMatch =
@@ -125,9 +85,20 @@ export default function AdminOrdersPage() {
     }
   }
 
-  const handleViewDetails = (order: OrderData) => {
+  const handleViewDetails = (order: OrderType) => {
     setSelectedOrder(order)
     setIsViewDetailsOpen(true)
+  }
+
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          <span className="ml-2 text-lg">Loading orders...</span>
+        </div>
+      </AdminLayout>
+    )
   }
 
   return (

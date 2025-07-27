@@ -1,8 +1,6 @@
 "use client"
 
-import { Label } from "@/components/ui/label"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import VendorLayout from "@/components/vendor-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -11,103 +9,81 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import OrderTrackingMap from "@/components/order-tracking-map"
 import ReviewModal from "@/components/review-modal"
-import { Package, MapPin, Star, Eye } from "lucide-react"
+import { Package, MapPin, Star, Eye, Loader2 } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { useToast } from "@/components/ui/use-toast"
+import { Label } from "@/components/ui/label"
+import type { Order as OrderType } from "@/lib/db" // Import OrderType from lib/db
 
 type OrderStatus = "Processing" | "Shipped" | "Delivered" | "Cancelled"
 
-type Order = {
-  id: string
-  item: string
-  quantity: string
-  supplier: string
-  orderDate: string
-  deliveryDate: string
-  status: OrderStatus
-  progress: number // 0-100
-  originCoords: [number, number] // Supplier's location
-  destinationCoords: [number, number] // Vendor's location
-  currentLocationCoords?: [number, number] // Optional, for real-time tracking
-  reviewed: boolean
+// Dummy data for map coordinates (replace with actual data from backend if available)
+const dummyMapCoords = {
+  "GO-001": {
+    origin: [28.6139, 77.209], // Delhi
+    destination: [28.5355, 77.391], // Noida
+    currentLocation: [28.58, 77.3], // Somewhere in between
+  },
+  "GO-002": {
+    origin: [19.076, 72.8777], // Mumbai
+    destination: [18.5204, 73.8567], // Pune
+    currentLocation: [18.8, 73.5],
+  },
+  // Add more dummy coordinates for other orders as needed
 }
 
-const initialOrders: Order[] = [
-  {
-    id: "ORD-001",
-    item: "Fresh Onions",
-    quantity: "50 kg",
-    supplier: "Suresh Vegetables",
-    orderDate: "2024-07-28",
-    deliveryDate: "2024-07-30",
-    status: "Shipped",
-    progress: 75,
-    originCoords: [28.6139, 77.209], // Delhi
-    destinationCoords: [28.5355, 77.391], // Noida
-    currentLocationCoords: [28.58, 77.3], // Simulated current location
-    reviewed: false,
-  },
-  {
-    id: "ORD-002",
-    item: "Organic Tomatoes",
-    quantity: "30 kg",
-    supplier: "Fresh Mart",
-    orderDate: "2024-07-27",
-    deliveryDate: "2024-07-29",
-    status: "Delivered",
-    progress: 100,
-    originCoords: [19.076, 72.8777], // Mumbai
-    destinationCoords: [18.5204, 73.8567], // Pune
-    reviewed: false,
-  },
-  {
-    id: "ORD-003",
-    item: "Local Potatoes",
-    quantity: "100 kg",
-    supplier: "Green Valley Farms",
-    orderDate: "2024-07-26",
-    deliveryDate: "2024-07-28",
-    status: "Processing",
-    progress: 25,
-    originCoords: [22.5726, 88.3639], // Kolkata
-    destinationCoords: [22.5726, 88.3639],
-    reviewed: false,
-  },
-  {
-    id: "ORD-004",
-    item: "Green Cabbage",
-    quantity: "20 pieces",
-    supplier: "Suresh Vegetables",
-    orderDate: "2024-07-25",
-    deliveryDate: "2024-07-27",
-    status: "Cancelled",
-    progress: 0,
-    originCoords: [12.9716, 77.5946], // Bangalore
-    destinationCoords: [12.9716, 77.5946],
-    reviewed: false,
-  },
-  {
-    id: "ORD-005",
-    item: "Fresh Ginger",
-    quantity: "10 kg",
-    supplier: "Fresh Mart",
-    orderDate: "2024-07-24",
-    deliveryDate: "2024-07-26",
-    status: "Delivered",
-    progress: 100,
-    originCoords: [26.9124, 75.7873], // Jaipur
-    destinationCoords: [26.8, 75.9],
-    reviewed: true, // Already reviewed
-  },
-]
-
 export default function MyOrdersPage() {
-  const [orders, setOrders] = useState<Order[]>(initialOrders)
+  const [orders, setOrders] = useState<OrderType[]>([])
   const [isMapOpen, setIsMapOpen] = useState(false)
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false)
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [selectedOrder, setSelectedOrder] = useState<OrderType | null>(null)
   const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
+
+  const [currentVendorId, setCurrentVendorId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("currentUser") || "{}")
+    if (user && user.id && user.role === "Vendor") {
+      setCurrentVendorId(user.id)
+      fetchOrders(user.id)
+    } else {
+      toast({
+        title: "Authentication Error",
+        description: "Please log in as a vendor to view your orders.",
+        variant: "destructive",
+      })
+      setIsLoading(false)
+    }
+  }, [])
+
+  const fetchOrders = async (vendorId: string) => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/orders")
+      if (response.ok) {
+        const data: OrderType[] = await response.json()
+        // Filter orders by the current vendor
+        setOrders(data.filter((order) => order.vendorId === vendorId))
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to fetch orders.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Failed to fetch orders:", error)
+      toast({
+        title: "Error",
+        description: "Could not connect to the server to fetch orders.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const getStatusBadgeVariant = (status: OrderStatus) => {
     switch (status) {
@@ -124,33 +100,68 @@ export default function MyOrdersPage() {
     }
   }
 
-  const handleTrackOrder = (order: Order) => {
+  const handleTrackOrder = (order: OrderType) => {
     setSelectedOrder(order)
     setIsMapOpen(true)
   }
 
-  const handleGiveReview = (order: Order) => {
+  const handleGiveReview = (order: OrderType) => {
     setSelectedOrder(order)
     setIsReviewModalOpen(true)
   }
 
-  const handleReviewSubmit = (rating: number, comment: string) => {
+  const handleReviewSubmit = async (rating: number, comment: string) => {
     if (selectedOrder) {
-      setOrders((prevOrders) =>
-        prevOrders.map((order) => (order.id === selectedOrder.id ? { ...order, reviewed: true } : order)),
-      )
-      toast({
-        title: "Review Submitted!",
-        description: `Thank you for reviewing order ${selectedOrder.id}. Rating: ${rating} stars.`,
-      })
-      setIsReviewModalOpen(false)
-      setSelectedOrder(null)
+      // Simulate updating the order as reviewed in the backend
+      try {
+        const response = await fetch("/api/orders", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: selectedOrder.id, reviewed: true, review: { rating, comment } }), // Add review data
+        })
+        if (response.ok) {
+          setOrders((prevOrders) =>
+            prevOrders.map((order) => (order.id === selectedOrder.id ? { ...order, reviewed: true } : order)),
+          )
+          toast({
+            title: "Review Submitted!",
+            description: `Thank you for reviewing order ${selectedOrder.id}. Rating: ${rating} stars.`,
+          })
+          setIsReviewModalOpen(false)
+          setSelectedOrder(null)
+        } else {
+          const errorData = await response.json()
+          toast({
+            title: "Review Submission Failed",
+            description: errorData.message || "Could not submit review.",
+            variant: "destructive",
+          })
+        }
+      } catch (error) {
+        console.error("Review submission error:", error)
+        toast({
+          title: "Error",
+          description: "Could not connect to the server to submit review.",
+          variant: "destructive",
+        })
+      }
     }
   }
 
-  const handleViewDetails = (order: Order) => {
+  const handleViewDetails = (order: OrderType) => {
     setSelectedOrder(order)
     setIsOrderDetailsOpen(true)
+  }
+
+  if (isLoading) {
+    return (
+      <VendorLayout>
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-green-500" />
+          <span className="ml-2 text-lg">Loading your orders...</span>
+        </div>
+      </VendorLayout>
+    )
   }
 
   return (
@@ -199,16 +210,23 @@ export default function MyOrdersPage() {
                         <TableCell>{order.item}</TableCell>
                         <TableCell>{order.quantity}</TableCell>
                         <TableCell>{order.supplier}</TableCell>
-                        <TableCell>{order.orderDate}</TableCell>
-                        <TableCell>{order.deliveryDate}</TableCell>
+                        <TableCell>{order.date}</TableCell>
+                        <TableCell>{order.date}</TableCell>{" "}
+                        {/* Assuming delivery date is same as order date for simplicity */}
                         <TableCell>
                           <Badge variant={getStatusBadgeVariant(order.status)}>{order.status}</Badge>
                         </TableCell>
                         <TableCell>
                           {order.status !== "Cancelled" && (
                             <div className="flex items-center gap-2">
-                              <Progress value={order.progress} className="w-[100px]" />
-                              <span className="text-sm text-gray-600">{order.progress}%</span>
+                              {/* Progress is simulated, not from backend */}
+                              <Progress
+                                value={order.status === "Delivered" ? 100 : order.status === "Shipped" ? 75 : 25}
+                                className="w-[100px]"
+                              />
+                              <span className="text-sm text-gray-600">
+                                {order.status === "Delivered" ? 100 : order.status === "Shipped" ? 75 : 25}%
+                              </span>
                             </div>
                           )}
                         </TableCell>
@@ -224,13 +242,14 @@ export default function MyOrdersPage() {
                                 Track Order
                               </Button>
                             )}
-                            {order.status === "Delivered" && !order.reviewed && (
-                              <Button variant="default" size="sm" onClick={() => handleGiveReview(order)}>
-                                <Star className="h-4 w-4 mr-1" />
-                                Give Review
-                              </Button>
-                            )}
-                            {order.status === "Delivered" && order.reviewed && (
+                            {order.status === "Delivered" &&
+                              !(order as any).reviewed && ( // 'reviewed' is not in OrderType, casting for demo
+                                <Button variant="default" size="sm" onClick={() => handleGiveReview(order)}>
+                                  <Star className="h-4 w-4 mr-1" />
+                                  Give Review
+                                </Button>
+                              )}
+                            {order.status === "Delivered" && (order as any).reviewed && (
                               <Button variant="ghost" size="sm" disabled>
                                 <Star className="h-4 w-4 mr-1" />
                                 Reviewed
@@ -260,14 +279,19 @@ export default function MyOrdersPage() {
               </Badge>
             </DialogDescription>
           </DialogHeader>
-          {selectedOrder && (
+          {selectedOrder && dummyMapCoords[selectedOrder.id as keyof typeof dummyMapCoords] && (
             <div className="flex-1">
               <OrderTrackingMap
-                origin={selectedOrder.originCoords}
-                destination={selectedOrder.destinationCoords}
-                currentLocation={selectedOrder.currentLocationCoords}
+                origin={dummyMapCoords[selectedOrder.id as keyof typeof dummyMapCoords].origin}
+                destination={dummyMapCoords[selectedOrder.id as keyof typeof dummyMapCoords].destination}
+                currentLocation={dummyMapCoords[selectedOrder.id as keyof typeof dummyMapCoords].currentLocation}
                 orderId={selectedOrder.id}
               />
+            </div>
+          )}
+          {selectedOrder && !dummyMapCoords[selectedOrder.id as keyof typeof dummyMapCoords] && (
+            <div className="flex-1 flex items-center justify-center text-gray-500">
+              Map data not available for this order.
             </div>
           )}
         </DialogContent>
@@ -307,11 +331,11 @@ export default function MyOrdersPage() {
               </div>
               <div className="grid grid-cols-2 items-center gap-4">
                 <Label>Order Date:</Label>
-                <div>{selectedOrder.orderDate}</div>
+                <div>{selectedOrder.date}</div>
               </div>
               <div className="grid grid-cols-2 items-center gap-4">
                 <Label>Delivery Date:</Label>
-                <div>{selectedOrder.deliveryDate}</div>
+                <div>{selectedOrder.date}</div> {/* Assuming delivery date is same as order date for simplicity */}
               </div>
               <div className="grid grid-cols-2 items-center gap-4">
                 <Label>Status:</Label>
@@ -323,8 +347,13 @@ export default function MyOrdersPage() {
                 <div className="grid grid-cols-2 items-center gap-4">
                   <Label>Progress:</Label>
                   <div className="flex items-center gap-2">
-                    <Progress value={selectedOrder.progress} className="w-[150px]" />
-                    <span className="text-sm text-gray-600">{selectedOrder.progress}%</span>
+                    <Progress
+                      value={selectedOrder.status === "Delivered" ? 100 : selectedOrder.status === "Shipped" ? 75 : 25}
+                      className="w-[150px]"
+                    />
+                    <span className="text-sm text-gray-600">
+                      {selectedOrder.status === "Delivered" ? 100 : selectedOrder.status === "Shipped" ? 75 : 25}%
+                    </span>
                   </div>
                 </div>
               )}

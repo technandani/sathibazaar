@@ -1,13 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertTriangle, Search, Filter, Eye, CheckCircle, MessageSquare } from "lucide-react"
+import { AlertTriangle, Search, Filter, Eye, CheckCircle, MessageSquare, Loader2 } from "lucide-react"
 import AdminLayout from "@/components/admin-layout"
 import {
   Dialog,
@@ -20,72 +20,54 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/ui/use-toast"
+import type { Complaint as ComplaintType } from "@/lib/db" // Import ComplaintType from lib/db
 
 type ComplaintStatus = "Open" | "In Progress" | "Resolved"
 type ComplaintPriority = "High" | "Medium" | "Low"
 
-type ComplaintData = {
-  id: string
-  user: string
-  userType: string
-  issue: string
-  status: ComplaintStatus
-  priority: ComplaintPriority
-  date: string
-  resolutionNotes?: string
-}
-
-const initialComplaints: ComplaintData[] = [
-  {
-    id: "CMP-001",
-    user: "Rajesh Kumar",
-    userType: "Vendor",
-    issue: "Late delivery of onions (Order GO-001)",
-    status: "Open",
-    priority: "High",
-    date: "2024-07-21",
-  },
-  {
-    id: "CMP-002",
-    user: "Suresh Vegetables",
-    userType: "Supplier",
-    issue: "Payment delay for Order GO-001",
-    status: "Resolved",
-    priority: "Medium",
-    date: "2024-07-22",
-    resolutionNotes: "Payment processed on 2024-07-22. User notified.",
-  },
-  {
-    id: "CMP-003",
-    user: "Priya Sharma",
-    userType: "Vendor",
-    issue: "Quality issue with tomatoes (Order GO-002)",
-    status: "In Progress",
-    priority: "High",
-    date: "2024-07-26",
-  },
-  {
-    id: "CMP-004",
-    user: "Amit Singh",
-    userType: "Vendor",
-    issue: "Incorrect quantity received for potatoes",
-    status: "Open",
-    priority: "Medium",
-    date: "2024-07-26",
-  },
-]
-
 export default function AdminComplaintsPage() {
-  const [complaints, setComplaints] = useState<ComplaintData[]>(initialComplaints)
+  const [complaints, setComplaints] = useState<ComplaintType[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("All")
   const [filterPriority, setFilterPriority] = useState("All")
 
   const [isViewDetailsOpen, setIsViewDetailsOpen] = useState(false)
   const [isReplyModalOpen, setIsReplyModalOpen] = useState(false)
-  const [selectedComplaint, setSelectedComplaint] = useState<ComplaintData | null>(null)
+  const [selectedComplaint, setSelectedComplaint] = useState<ComplaintType | null>(null)
   const [replyMessage, setReplyMessage] = useState("")
   const { toast } = useToast()
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    fetchComplaints()
+  }, [])
+
+  const fetchComplaints = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/complaints")
+      if (response.ok) {
+        const data: ComplaintType[] = await response.json()
+        setComplaints(data)
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to fetch complaints.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Failed to fetch complaints:", error)
+      toast({
+        title: "Error",
+        description: "Could not connect to the server to fetch complaints.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const filteredComplaints = complaints.filter((complaint) => {
     const searchMatch =
@@ -123,45 +105,92 @@ export default function AdminComplaintsPage() {
     }
   }
 
-  const handleViewDetails = (complaint: ComplaintData) => {
+  const handleViewDetails = (complaint: ComplaintType) => {
     setSelectedComplaint(complaint)
     setIsViewDetailsOpen(true)
   }
 
-  const handleMarkAsResolved = (complaintId: string) => {
-    setComplaints((prevComplaints) =>
-      prevComplaints.map((c) =>
-        c.id === complaintId ? { ...c, status: "Resolved", resolutionNotes: "Resolved by admin." } : c,
-      ),
-    )
-    toast({
-      title: "Complaint Resolved!",
-      description: `Complaint ${complaintId} has been marked as resolved.`,
-    })
+  const handleMarkAsResolved = async (complaintId: string) => {
+    setIsSubmitting(true)
+    try {
+      const response = await fetch("/api/complaints", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: complaintId, status: "Resolved", resolutionNotes: "Resolved by admin." }),
+      })
+      const data = await response.json()
+      if (response.ok) {
+        toast({
+          title: "Complaint Resolved!",
+          description: `Complaint ${complaintId} has been marked as resolved.`,
+        })
+        fetchComplaints() // Re-fetch to update status
+      } else {
+        toast({
+          title: "Resolution Failed",
+          description: data.message || "Something went wrong.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Complaint resolution error:", error)
+      toast({
+        title: "Error",
+        description: "Could not connect to the server to resolve complaint.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleReply = (complaint: ComplaintData) => {
+  const handleReply = (complaint: ComplaintType) => {
     setSelectedComplaint(complaint)
     setReplyMessage("") // Clear previous reply message
     setIsReplyModalOpen(true)
   }
 
-  const sendReply = () => {
-    if (selectedComplaint && replyMessage.trim()) {
-      console.log(`Replying to ${selectedComplaint.id}: ${replyMessage}`)
-      toast({
-        title: "Reply Sent!",
-        description: `Your reply to complaint ${selectedComplaint.id} has been sent.`,
-      })
-      setIsReplyModalOpen(false)
-      setReplyMessage("")
-    } else {
+  const sendReply = async () => {
+    if (!selectedComplaint || !replyMessage.trim()) {
       toast({
         title: "Error",
         description: "Reply message cannot be empty.",
         variant: "destructive",
       })
+      return
     }
+
+    setIsSubmitting(true)
+    try {
+      // Simulate sending a reply (in a real app, this would interact with an email/notification service)
+      console.log(`Simulating reply to ${selectedComplaint.user} (${selectedComplaint.id}): ${replyMessage}`)
+      toast({
+        title: "Reply Sent!",
+        description: `Your reply to complaint ${selectedComplaint.id} has been sent (simulated).`,
+      })
+      setIsReplyModalOpen(false)
+      setReplyMessage("")
+    } catch (error) {
+      console.error("Reply sending error:", error)
+      toast({
+        title: "Error",
+        description: "Could not send reply.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          <span className="ml-2 text-lg">Loading complaints...</span>
+        </div>
+      </AdminLayout>
+    )
   }
 
   return (
@@ -284,6 +313,7 @@ export default function AdminComplaintsPage() {
                               size="icon"
                               title="View Details"
                               onClick={() => handleViewDetails(complaint)}
+                              disabled={isSubmitting}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -293,7 +323,9 @@ export default function AdminComplaintsPage() {
                                 size="icon"
                                 title="Mark as Resolved"
                                 onClick={() => handleMarkAsResolved(complaint.id)}
+                                disabled={isSubmitting}
                               >
+                                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                                 <CheckCircle className="h-4 w-4" />
                               </Button>
                             )}
@@ -302,6 +334,7 @@ export default function AdminComplaintsPage() {
                               size="icon"
                               title="Reply"
                               onClick={() => handleReply(complaint)}
+                              disabled={isSubmitting}
                             >
                               <MessageSquare className="h-4 w-4" />
                             </Button>
@@ -391,10 +424,13 @@ export default function AdminComplaintsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsReplyModalOpen(false)}>
+            <Button variant="outline" onClick={() => setIsReplyModalOpen(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button onClick={sendReply}>Send Reply</Button>
+            <Button onClick={sendReply} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Send Reply
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

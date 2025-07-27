@@ -3,7 +3,7 @@
 import Image from "next/image"
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Package, Edit, Trash2, Search } from "lucide-react"
+import { Package, Edit, Trash2, Search, Loader2 } from "lucide-react"
 import SupplierLayout from "@/components/supplier-layout"
 import { useToast } from "@/components/ui/use-toast"
 import {
@@ -22,142 +22,201 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
-
-type Product = {
-  id: string
-  name: string
-  unitPrice: number
-  unit: string
-  availability: "In Stock" | "Out of Stock" | "Limited"
-  locationServed: string
-  image: string
-}
-
-const initialProducts: Product[] = [
-  {
-    id: "P-001",
-    name: "Onions",
-    unitPrice: 28,
-    unit: "kg",
-    availability: "In Stock",
-    locationServed: "Delhi NCR",
-    image: "/placeholder.svg?height=50&width=50",
-  },
-  {
-    id: "P-002",
-    name: "Tomatoes",
-    unitPrice: 42,
-    unit: "kg",
-    availability: "Limited",
-    locationServed: "Delhi NCR",
-    image: "/placeholder.svg?height=50&width=50",
-  },
-  {
-    id: "P-003",
-    name: "Potatoes",
-    unitPrice: 20,
-    unit: "kg",
-    availability: "In Stock",
-    locationServed: "Delhi NCR",
-    image: "/placeholder.svg?height=50&width=50",
-  },
-  {
-    id: "P-004",
-    name: "Green Chili",
-    unitPrice: 75,
-    unit: "kg",
-    availability: "In Stock",
-    locationServed: "Delhi NCR",
-    image: "/placeholder.svg?height=50&width=50",
-  },
-  {
-    id: "P-005",
-    name: "Cabbage",
-    unitPrice: 22,
-    unit: "piece",
-    availability: "Out of Stock",
-    locationServed: "Delhi NCR",
-    image: "/placeholder.svg?height=50&width=50",
-  },
-]
+import type { Product as ProductType } from "@/lib/db" // Import ProductType from lib/db
 
 export default function SupplierProductsPage() {
   const { toast } = useToast()
-  const [products, setProducts] = useState<Product[]>(initialProducts)
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [products, setProducts] = useState<ProductType[]>([])
+  const [editingProduct, setEditingProduct] = useState<ProductType | null>(null)
 
   const [productName, setProductName] = useState("")
   const [unitPrice, setUnitPrice] = useState("")
   const [unit, setUnit] = useState("kg")
-  const [availability, setAvailability] = useState<Product["availability"]>("In Stock")
+  const [availability, setAvailability] = useState<ProductType["availability"]>("In Stock")
   const [locationServed, setLocationServed] = useState("Delhi NCR")
-  const [productImage, setProductImage] = useState("") // New state for image
+  const [productImageFile, setProductImageFile] = useState<File | null>(null) // For file input
+  const [productImageUrl, setProductImageUrl] = useState("") // For displaying and saving URL
 
   const [searchTerm, setSearchTerm] = useState("")
   const [filterAvailability, setFilterAvailability] = useState("All")
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [productToDelete, setProductToDelete] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleAddOrUpdateProduct = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!productName || !unitPrice || !unit || !locationServed) {
+  const [currentSupplierId, setCurrentSupplierId] = useState<string | null>(null)
+  const [currentSupplierName, setCurrentSupplierName] = useState<string | null>(null)
+
+  useEffect(() => {
+    // In a real app, this would come from a session or auth context
+    const user = JSON.parse(localStorage.getItem("currentUser") || "{}")
+    if (user && user.id && user.role === "Supplier") {
+      setCurrentSupplierId(user.id)
+      setCurrentSupplierName(user.name)
+      fetchProducts(user.id)
+    } else {
+      toast({
+        title: "Authentication Error",
+        description: "Please log in as a supplier to manage products.",
+        variant: "destructive",
+      })
+      setIsLoading(false)
+    }
+  }, [])
+
+  const fetchProducts = async (supplierId: string) => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/products")
+      if (response.ok) {
+        const data: ProductType[] = await response.json()
+        // Filter products by the current supplier
+        setProducts(data.filter((p) => p.supplierId === supplierId))
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to fetch products.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Failed to fetch products:", error)
       toast({
         title: "Error",
-        description: "Please fill all required fields.",
+        description: "Could not connect to the server to fetch products.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleImageUpload = async (): Promise<string | null> => {
+    if (!productImageFile) return productImageUrl || null // Return existing URL if no new file
+
+    setIsSubmitting(true)
+    const formData = new FormData()
+    formData.append("file", productImageFile)
+
+    try {
+      const response = await fetch("/api/upload-image", {
+        method: "POST",
+        body: formData,
+      })
+      const data = await response.json()
+      if (response.ok) {
+        toast({
+          title: "Image Uploaded!",
+          description: "Product image uploaded successfully.",
+        })
+        return data.imageUrl
+      } else {
+        toast({
+          title: "Image Upload Failed",
+          description: data.message || "Could not upload image.",
+          variant: "destructive",
+        })
+        return null
+      }
+    } catch (error) {
+      console.error("Image upload error:", error)
+      toast({
+        title: "Error",
+        description: "Could not connect to image upload service.",
+        variant: "destructive",
+      })
+      return null
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleAddOrUpdateProduct = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!productName || !unitPrice || !unit || !locationServed || !currentSupplierId || !currentSupplierName) {
+      toast({
+        title: "Error",
+        description: "Please fill all required fields and ensure you are logged in as a supplier.",
         variant: "destructive",
       })
       return
     }
 
-    const newImage = productImage || `/placeholder.svg?height=50&width=50&query=${productName.toLowerCase()}`
-
-    if (editingProduct) {
-      setProducts(
-        products.map((p) =>
-          p.id === editingProduct.id
-            ? {
-                ...p,
-                name: productName,
-                unitPrice: Number.parseFloat(unitPrice),
-                unit,
-                availability,
-                locationServed,
-                image: newImage,
-              }
-            : p,
-        ),
-      )
-      toast({
-        title: "Product Updated!",
-        description: `${productName} has been updated successfully.`,
-      })
-    } else {
-      const newProduct: Product = {
-        id: `P-${(products.length + 1).toString().padStart(3, "0")}`,
-        name: productName,
-        unitPrice: Number.parseFloat(unitPrice),
-        unit,
-        availability,
-        locationServed,
-        image: newImage,
-      }
-      setProducts([...products, newProduct])
-      toast({
-        title: "Product Added!",
-        description: `${productName} has been added to your product list.`,
-      })
+    setIsSubmitting(true)
+    const uploadedImageUrl = await handleImageUpload()
+    if (productImageFile && !uploadedImageUrl) {
+      setIsSubmitting(false)
+      return // Stop if image upload failed
     }
-    resetForm()
+
+    const finalImageUrl =
+      uploadedImageUrl || productImageUrl || `/placeholder.svg?height=50&width=50&query=${productName.toLowerCase()}`
+
+    const productData = {
+      name: productName,
+      unitPrice: Number.parseFloat(unitPrice),
+      unit,
+      availability,
+      locationServed,
+      image: finalImageUrl,
+      supplierId: currentSupplierId,
+      supplierName: currentSupplierName,
+    }
+
+    try {
+      let response
+      if (editingProduct) {
+        response = await fetch(`/api/products/${editingProduct.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(productData),
+        })
+      } else {
+        response = await fetch("/api/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(productData),
+        })
+      }
+
+      const data = await response.json()
+      if (response.ok) {
+        toast({
+          title: editingProduct ? "Product Updated!" : "Product Added!",
+          description: `${productName} has been ${editingProduct ? "updated" : "added"} successfully.`,
+        })
+        if (currentSupplierId) {
+          fetchProducts(currentSupplierId) // Re-fetch products to update list
+        }
+        resetForm()
+      } else {
+        toast({
+          title: "Operation Failed",
+          description: data.message || "Something went wrong.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Product operation error:", error)
+      toast({
+        title: "Error",
+        description: "Could not connect to the server.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleEditClick = (product: Product) => {
+  const handleEditClick = (product: ProductType) => {
     setEditingProduct(product)
     setProductName(product.name)
     setUnitPrice(product.unitPrice.toString())
     setUnit(product.unit)
     setAvailability(product.availability)
     setLocationServed(product.locationServed)
-    setProductImage(product.image)
+    setProductImageUrl(product.image) // Set current image URL for display
+    setProductImageFile(null) // Clear file input
   }
 
   const handleDeleteClick = (id: string) => {
@@ -165,13 +224,39 @@ export default function SupplierProductsPage() {
     setIsDeleteDialogOpen(true)
   }
 
-  const confirmDelete = () => {
-    if (productToDelete) {
-      setProducts(products.filter((p) => p.id !== productToDelete))
-      toast({
-        title: "Product Deleted!",
-        description: "The product has been removed.",
+  const confirmDelete = async () => {
+    if (!productToDelete) return
+
+    setIsSubmitting(true)
+    try {
+      const response = await fetch(`/api/products/${productToDelete}`, {
+        method: "DELETE",
       })
+      const data = await response.json()
+      if (response.ok) {
+        toast({
+          title: "Product Deleted!",
+          description: data.message,
+        })
+        if (currentSupplierId) {
+          fetchProducts(currentSupplierId)
+        }
+      } else {
+        toast({
+          title: "Deletion Failed",
+          description: data.message || "Something went wrong during deletion.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Product deletion error:", error)
+      toast({
+        title: "Error",
+        description: "Could not connect to the server for deletion.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
       setProductToDelete(null)
       setIsDeleteDialogOpen(false)
     }
@@ -184,7 +269,8 @@ export default function SupplierProductsPage() {
     setUnit("kg")
     setAvailability("In Stock")
     setLocationServed("Delhi NCR")
-    setProductImage("")
+    setProductImageFile(null)
+    setProductImageUrl("")
   }
 
   const filteredProducts = products.filter(
@@ -193,7 +279,7 @@ export default function SupplierProductsPage() {
       (filterAvailability === "All" || product.availability === filterAvailability),
   )
 
-  const getAvailabilityBadgeVariant = (availability: Product["availability"]) => {
+  const getAvailabilityBadgeVariant = (availability: ProductType["availability"]) => {
     switch (availability) {
       case "In Stock":
         return "default"
@@ -204,6 +290,17 @@ export default function SupplierProductsPage() {
       default:
         return "outline"
     }
+  }
+
+  if (isLoading) {
+    return (
+      <SupplierLayout>
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          <span className="ml-2 text-lg">Loading products...</span>
+        </div>
+      </SupplierLayout>
+    )
   }
 
   return (
@@ -286,32 +383,38 @@ export default function SupplierProductsPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="product-image">Product Image URL (Optional)</Label>
+                <Label htmlFor="product-image">Product Image</Label>
                 <Input
                   id="product-image"
-                  type="url"
-                  placeholder="e.g., /placeholder.svg?query=onions"
-                  value={productImage}
-                  onChange={(e) => setProductImage(e.target.value)}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setProductImageFile(e.target.files ? e.target.files[0] : null)}
                 />
-                {productImage && (
+                {(productImageFile || productImageUrl) && (
                   <div className="mt-2">
                     <Image
-                      src={productImage || "/placeholder.svg"}
+                      src={productImageFile ? URL.createObjectURL(productImageFile) : productImageUrl}
                       alt="Product Preview"
                       width={80}
                       height={80}
-                      className="rounded-md"
+                      className="rounded-md object-cover"
                     />
                   </div>
                 )}
               </div>
               <div className="flex gap-2">
-                <Button type="submit" className="bg-blue-600 hover:bg-blue-700 shadow-md">
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-700 shadow-md" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {editingProduct ? "Update Product" : "Add Product"}
                 </Button>
                 {editingProduct && (
-                  <Button type="button" variant="outline" onClick={resetForm} className="bg-transparent">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={resetForm}
+                    className="bg-transparent"
+                    disabled={isSubmitting}
+                  >
                     Cancel Edit
                   </Button>
                 )}
@@ -407,6 +510,7 @@ export default function SupplierProductsPage() {
                               size="icon"
                               title="Edit Product"
                               onClick={() => handleEditClick(product)}
+                              disabled={isSubmitting}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -415,6 +519,7 @@ export default function SupplierProductsPage() {
                               size="icon"
                               title="Delete Product"
                               onClick={() => handleDeleteClick(product.id)}
+                              disabled={isSubmitting}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -440,10 +545,11 @@ export default function SupplierProductsPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
+            <Button variant="destructive" onClick={confirmDelete} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Delete
             </Button>
           </DialogFooter>

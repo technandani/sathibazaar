@@ -1,13 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Filter, User, CheckCircle, XCircle, Eye, Edit, Trash2 } from "lucide-react"
+import { Search, Filter, User, CheckCircle, XCircle, Eye, Edit, Trash2, Loader2 } from "lucide-react"
 import AdminLayout from "@/components/admin-layout"
 import {
   Dialog,
@@ -19,80 +19,14 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
+import type { User as UserType } from "@/lib/db" // Import UserType from lib/db
 
 type UserRole = "Vendor" | "Supplier" | "Admin"
 type UserStatus = "Active" | "Inactive" | "Suspended"
 type VerificationStatus = "Verified" | "Unverified"
 
-type UserData = {
-  id: string
-  name: string
-  email: string
-  role: UserRole
-  status: UserStatus
-  verification: VerificationStatus
-  lastLogin: string
-}
-
-const initialUsers: UserData[] = [
-  {
-    id: "USR-001",
-    name: "Rajesh Kumar",
-    email: "rajesh.k@example.com",
-    role: "Vendor",
-    status: "Active",
-    verification: "Verified",
-    lastLogin: "2024-07-28",
-  },
-  {
-    id: "USR-002",
-    name: "Priya Sharma",
-    email: "priya.s@example.com",
-    role: "Supplier",
-    status: "Active",
-    verification: "Verified",
-    lastLogin: "2024-07-27",
-  },
-  {
-    id: "USR-003",
-    name: "Amit Singh",
-    email: "amit.s@example.com",
-    role: "Vendor",
-    status: "Inactive",
-    verification: "Unverified",
-    lastLogin: "2024-07-20",
-  },
-  {
-    id: "USR-004",
-    name: "Kiran Devi",
-    email: "kiran.d@example.com",
-    role: "Supplier",
-    status: "Suspended",
-    verification: "Verified",
-    lastLogin: "2024-07-15",
-  },
-  {
-    id: "USR-005",
-    name: "Admin User",
-    email: "admin@example.com",
-    role: "Admin",
-    status: "Active",
-    verification: "Verified",
-    lastLogin: "2024-07-29",
-  },
-  {
-    id: "USR-006",
-    name: "New Vendor",
-    email: "new.vendor@example.com",
-    role: "Vendor",
-    status: "Active",
-    verification: "Unverified",
-    lastLogin: "2024-07-29",
-  },
-]
-
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<UserData[]>(initialUsers)
+  const [users, setUsers] = useState<UserType[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [filterRole, setFilterRole] = useState("All")
   const [filterStatus, setFilterStatus] = useState("All")
@@ -101,8 +35,10 @@ export default function AdminUsersPage() {
   const [isViewDetailsOpen, setIsViewDetailsOpen] = useState(false)
   const [isEditUserOpen, setIsEditUserOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<UserData | null>(null)
+  const [selectedUser, setSelectedUser] = useState<UserType | null>(null)
   const { toast } = useToast()
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // State for edit form
   const [editName, setEditName] = useState("")
@@ -110,6 +46,36 @@ export default function AdminUsersPage() {
   const [editRole, setEditRole] = useState<UserRole>("Vendor")
   const [editStatus, setEditStatus] = useState<UserStatus>("Active")
   const [editVerification, setEditVerification] = useState<VerificationStatus>("Verified")
+
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  const fetchUsers = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/users")
+      if (response.ok) {
+        const data: UserType[] = await response.json()
+        setUsers(data)
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to fetch users.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Failed to fetch users:", error)
+      toast({
+        title: "Error",
+        description: "Could not connect to the server to fetch users.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const filteredUsers = users.filter((user) => {
     const searchMatch =
@@ -146,12 +112,12 @@ export default function AdminUsersPage() {
     }
   }
 
-  const handleViewDetails = (user: UserData) => {
+  const handleViewDetails = (user: UserType) => {
     setSelectedUser(user)
     setIsViewDetailsOpen(true)
   }
 
-  const handleEditUser = (user: UserData) => {
+  const handleEditUser = (user: UserType) => {
     setSelectedUser(user)
     setEditName(user.name)
     setEditEmail(user.email)
@@ -161,47 +127,104 @@ export default function AdminUsersPage() {
     setIsEditUserOpen(true)
   }
 
-  const handleSaveEdit = () => {
-    if (selectedUser) {
-      setUsers(
-        users.map((u) =>
-          u.id === selectedUser.id
-            ? {
-                ...u,
-                name: editName,
-                email: editEmail,
-                role: editRole,
-                status: editStatus,
-                verification: editVerification,
-              }
-            : u,
-        ),
-      )
-      toast({
-        title: "User Updated!",
-        description: `User ${selectedUser.name} has been updated.`,
+  const handleSaveEdit = async () => {
+    if (!selectedUser) return
+
+    setIsSubmitting(true)
+    try {
+      const response = await fetch("/api/users", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: selectedUser.id,
+          name: editName,
+          email: editEmail,
+          role: editRole,
+          status: editStatus,
+          verification: editVerification,
+        }),
       })
-      setIsEditUserOpen(false)
-      setSelectedUser(null)
+      const data = await response.json()
+      if (response.ok) {
+        toast({
+          title: "User Updated!",
+          description: `User ${editName} has been updated.`,
+        })
+        fetchUsers() // Re-fetch users to update list
+        setIsEditUserOpen(false)
+        setSelectedUser(null)
+      } else {
+        toast({
+          title: "Update Failed",
+          description: data.message || "Something went wrong.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("User update error:", error)
+      toast({
+        title: "Error",
+        description: "Could not connect to the server.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
-  const handleDeleteUser = (user: UserData) => {
+  const handleDeleteUser = (user: UserType) => {
     setSelectedUser(user)
     setIsDeleteDialogOpen(true)
   }
 
-  const confirmDelete = () => {
-    if (selectedUser) {
-      setUsers(users.filter((u) => u.id !== selectedUser.id))
+  const confirmDelete = async () => {
+    if (!selectedUser) return
+
+    setIsSubmitting(true)
+    try {
+      const response = await fetch("/api/users", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: selectedUser.id }),
+      })
+      const data = await response.json()
+      if (response.ok) {
+        toast({
+          title: "User Deleted!",
+          description: data.message,
+          variant: "destructive",
+        })
+        fetchUsers() // Re-fetch users to update list
+        setIsDeleteDialogOpen(false)
+        setSelectedUser(null)
+      } else {
+        toast({
+          title: "Deletion Failed",
+          description: data.message || "Something went wrong during deletion.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("User deletion error:", error)
       toast({
-        title: "User Deleted!",
-        description: `User ${selectedUser.name} has been deleted.`,
+        title: "Error",
+        description: "Could not connect to the server for deletion.",
         variant: "destructive",
       })
-      setIsDeleteDialogOpen(false)
-      setSelectedUser(null)
+    } finally {
+      setIsSubmitting(false)
     }
+  }
+
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          <span className="ml-2 text-lg">Loading users...</span>
+        </div>
+      </AdminLayout>
+    )
   }
 
   return (
@@ -341,6 +364,7 @@ export default function AdminUsersPage() {
                               size="icon"
                               title="View Details"
                               onClick={() => handleViewDetails(user)}
+                              disabled={isSubmitting}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -349,6 +373,7 @@ export default function AdminUsersPage() {
                               size="icon"
                               title="Edit User"
                               onClick={() => handleEditUser(user)}
+                              disabled={isSubmitting}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -357,6 +382,7 @@ export default function AdminUsersPage() {
                               size="icon"
                               title="Delete User"
                               onClick={() => handleDeleteUser(user)}
+                              disabled={isSubmitting}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -479,10 +505,13 @@ export default function AdminUsersPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditUserOpen(false)}>
+            <Button variant="outline" onClick={() => setIsEditUserOpen(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button onClick={handleSaveEdit}>Save Changes</Button>
+            <Button onClick={handleSaveEdit} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -497,10 +526,11 @@ export default function AdminUsersPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
+            <Button variant="destructive" onClick={confirmDelete} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Delete
             </Button>
           </DialogFooter>
