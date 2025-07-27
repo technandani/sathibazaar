@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   title: "SathiBazaar - Group Orders for Street Food Vendors",
   description:
     "Join fellow street food vendors to bulk order raw materials and get amazing discounts from local suppliers.",
-    generator: 'v0.dev'
+    generator: 'Nandani singh'
 }
 
 export default function RootLayout({

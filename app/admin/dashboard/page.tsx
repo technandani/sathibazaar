@@ -1,261 +1,147 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Users, ShoppingBag, TrendingUp, AlertTriangle, DollarSign, Package } from "lucide-react"
+"use client"
+
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { ShoppingBag, Users, AlertTriangle, TrendingUp, Loader2 } from "lucide-react"
 import AdminLayout from "@/components/admin-layout"
-
-const recentOrders = [
-  {
-    id: "ORD-001",
-    vendor: "Rajesh Kumar",
-    supplier: "Suresh Vegetables",
-    item: "Onions",
-    amount: "₹2,400",
-    status: "completed",
-  },
-  {
-    id: "ORD-002",
-    vendor: "Priya Sharma",
-    supplier: "Fresh Mart",
-    item: "Tomatoes",
-    amount: "₹1,800",
-    status: "pending",
-  },
-  {
-    id: "ORD-003",
-    vendor: "Amit Singh",
-    supplier: "Green Valley",
-    item: "Potatoes",
-    amount: "₹1,200",
-    status: "in-progress",
-  },
-]
-
-const recentComplaints = [
-  { id: "CMP-001", user: "Rajesh Kumar", type: "Vendor", issue: "Late delivery", status: "open", priority: "high" },
-  {
-    id: "CMP-002",
-    user: "Suresh Vegetables",
-    type: "Supplier",
-    issue: "Payment delay",
-    status: "resolved",
-    priority: "medium",
-  },
-  {
-    id: "CMP-003",
-    user: "Priya Sharma",
-    type: "Vendor",
-    issue: "Quality issue",
-    status: "in-progress",
-    priority: "high",
-  },
-]
+import { useToast } from "@/components/ui/use-toast"
 
 export default function AdminDashboard() {
+  const [totalUsers, setTotalUsers] = useState(0)
+  const [totalOrders, setTotalOrders] = useState(0)
+  const [openComplaints, setOpenComplaints] = useState(0)
+  const [totalRevenue, setTotalRevenue] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+  const { toast } = useToast()
+
+  useEffect(() => {
+    // Simulate fetching data from API routes
+    const fetchData = async () => {
+      setIsLoading(true)
+      try {
+        // Fetch Users
+        const usersResponse = await fetch("/api/users")
+        const usersData = await usersResponse.json()
+        setTotalUsers(usersData.length)
+
+        // Fetch Orders
+        const ordersResponse = await fetch("/api/orders")
+        const ordersData = await ordersResponse.json()
+        setTotalOrders(ordersData.length)
+        const revenue = ordersData.reduce((sum: number, order: any) => {
+          const amount = Number.parseFloat(order.totalAmount.replace("₹", "").replace(",", "")) || 0
+          return sum + amount
+        }, 0)
+        setTotalRevenue(revenue)
+
+        // Fetch Complaints
+        const complaintsResponse = await fetch("/api/complaints")
+        const complaintsData = await complaintsResponse.json()
+        setOpenComplaints(complaintsData.filter((c: any) => c.status === "Open").length)
+
+        toast({
+          title: "Dashboard Data Loaded",
+          description: "Latest statistics are now available.",
+        })
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error)
+        toast({
+          title: "Error",
+          description: "Could not load dashboard data.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          <span className="ml-2 text-lg">Loading dashboard data...</span>
+        </div>
+      </AdminLayout>
+    )
+  }
+
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-gray-700 to-gray-800 text-white p-6 rounded-lg">
-          <h1 className="text-2xl font-bold mb-2">Admin Dashboard</h1>
-          <p className="opacity-90">Monitor and manage the SathiBazaar platform</p>
-        </div>
+        <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalUsers}</div>
+              <p className="text-xs text-muted-foreground">Registered on platform</p>
+            </CardContent>
+          </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
               <ShoppingBag className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">1,247</div>
-              <p className="text-xs text-muted-foreground">+12% from last month</p>
+              <div className="text-2xl font-bold">{totalOrders}</div>
+              <p className="text-xs text-muted-foreground">Group orders placed</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Vendors</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Open Complaints</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">342</div>
-              <p className="text-xs text-muted-foreground">+8% from last month</p>
+              <div className="text-2xl font-bold">{openComplaints}</div>
+              <p className="text-xs text-muted-foreground">Requiring attention</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Suppliers</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">89</div>
-              <p className="text-xs text-muted-foreground">+5% from last month</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Platform Earnings</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">₹45,230</div>
-              <p className="text-xs text-muted-foreground">+15% from last month</p>
+              <div className="text-2xl font-bold">₹{totalRevenue.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">From completed orders</p>
             </CardContent>
           </Card>
         </div>
 
+        {/* Recent Activity / Charts (Placeholder) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Orders */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Orders</CardTitle>
-              <CardDescription>Latest group orders on the platform</CardDescription>
+              <CardTitle>Recent User Activity</CardTitle>
+              <CardDescription>Latest registrations and logins.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentOrders.map((order) => (
-                  <div key={order.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium">{order.id}</span>
-                        <Badge
-                          variant={
-                            order.status === "completed"
-                              ? "default"
-                              : order.status === "pending"
-                                ? "secondary"
-                                : "outline"
-                          }
-                        >
-                          {order.status}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {order.vendor} → {order.supplier}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {order.item} • {order.amount}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <p className="text-gray-500">
+                {/* In a real app, fetch recent user activity */}
+                No recent activity to display.
+              </p>
             </CardContent>
           </Card>
-
-          {/* Recent Complaints */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Complaints</CardTitle>
-              <CardDescription>Support tickets requiring attention</CardDescription>
+              <CardTitle>Order Trends</CardTitle>
+              <CardDescription>Monthly order volume and value.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentComplaints.map((complaint) => (
-                  <div key={complaint.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium">{complaint.id}</span>
-                        <Badge
-                          variant={
-                            complaint.priority === "high"
-                              ? "destructive"
-                              : complaint.priority === "medium"
-                                ? "secondary"
-                                : "outline"
-                          }
-                        >
-                          {complaint.priority}
-                        </Badge>
-                        <Badge
-                          variant={
-                            complaint.status === "resolved"
-                              ? "default"
-                              : complaint.status === "in-progress"
-                                ? "secondary"
-                                : "outline"
-                          }
-                        >
-                          {complaint.status}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {complaint.user} ({complaint.type})
-                      </p>
-                      <p className="text-sm text-gray-500">{complaint.issue}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* System Health */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">System Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">API Status</span>
-                  <Badge className="bg-green-100 text-green-800">Healthy</Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Database</span>
-                  <Badge className="bg-green-100 text-green-800">Online</Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Payment Gateway</span>
-                  <Badge className="bg-green-100 text-green-800">Active</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Today's Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm">New Orders</span>
-                  <span className="font-semibold">23</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">New Vendors</span>
-                  <span className="font-semibold">5</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">Active Groups</span>
-                  <span className="font-semibold">18</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Alerts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                  <span className="text-sm">3 pending complaints</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <AlertTriangle className="h-4 w-4 text-red-500" />
-                  <span className="text-sm">1 high priority issue</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Revenue up 15%</span>
-                </div>
-              </div>
+              <p className="text-gray-500">
+                {/* In a real app, integrate a chart library */}
+                No order trends to display.
+              </p>
             </CardContent>
           </Card>
         </div>

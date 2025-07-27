@@ -1,5 +1,7 @@
 "use client"
 
+import { Label } from "@/components/ui/label"
+
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,23 +11,8 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ShoppingBag, Search, Filter, Eye } from "lucide-react"
 import AdminLayout from "@/components/admin-layout"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 
-type OrderStatus = "Completed" | "Pending" | "In Progress" | "Pending Pickup" | "Cancelled"
-
-type OrderData = {
-  id: string
-  item: string
-  quantity: string
-  totalAmount: string
-  vendor: string
-  supplier: string
-  status: OrderStatus
-  date: string
-}
-
-const allOrders: OrderData[] = [
+const allOrders = [
   {
     id: "GO-001",
     item: "Onions",
@@ -76,28 +63,14 @@ const allOrders: OrderData[] = [
     status: "Pending Pickup",
     date: "2024-07-27",
   },
-  {
-    id: "GO-006",
-    item: "Spinach",
-    quantity: "30 bunches",
-    totalAmount: "₹450",
-    vendor: "Rajesh Kumar",
-    supplier: "Green Valley",
-    status: "Cancelled",
-    date: "2024-07-28",
-  },
 ]
 
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState<OrderData[]>(allOrders)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("All")
   const [filterDate, setFilterDate] = useState("")
 
-  const [isViewDetailsOpen, setIsViewDetailsOpen] = useState(false)
-  const [selectedOrder, setSelectedOrder] = useState<OrderData | null>(null)
-
-  const filteredOrders = orders.filter((order) => {
+  const filteredOrders = allOrders.filter((order) => {
     const searchMatch =
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.item.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -108,7 +81,7 @@ export default function AdminOrdersPage() {
     return searchMatch && statusMatch && dateMatch
   })
 
-  const getStatusBadgeVariant = (status: OrderStatus) => {
+  const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case "Completed":
         return "default"
@@ -118,16 +91,9 @@ export default function AdminOrdersPage() {
         return "outline"
       case "Pending Pickup":
         return "outline"
-      case "Cancelled":
-        return "destructive"
       default:
         return "outline"
     }
-  }
-
-  const handleViewDetails = (order: OrderData) => {
-    setSelectedOrder(order)
-    setIsViewDetailsOpen(true)
   }
 
   return (
@@ -164,7 +130,6 @@ export default function AdminOrdersPage() {
                   <SelectItem value="Pending">Pending</SelectItem>
                   <SelectItem value="In Progress">In Progress</SelectItem>
                   <SelectItem value="Pending Pickup">Pending Pickup</SelectItem>
-                  <SelectItem value="Cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -236,12 +201,7 @@ export default function AdminOrdersPage() {
                         </TableCell>
                         <TableCell>{order.date}</TableCell>
                         <TableCell>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            title="View Details"
-                            onClick={() => handleViewDetails(order)}
-                          >
+                          <Button variant="outline" size="icon" title="View Details">
                             <Eye className="h-4 w-4" />
                           </Button>
                         </TableCell>
@@ -254,54 +214,6 @@ export default function AdminOrdersPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* View Order Details Dialog */}
-      <Dialog open={isViewDetailsOpen} onOpenChange={setIsViewDetailsOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Order Details: {selectedOrder?.id}</DialogTitle>
-            <DialogDescription>Comprehensive information about this order.</DialogDescription>
-          </DialogHeader>
-          {selectedOrder && (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-3 items-center gap-4">
-                <Label>Order ID:</Label>
-                <div className="col-span-2">{selectedOrder.id}</div>
-              </div>
-              <div className="grid grid-cols-3 items-center gap-4">
-                <Label>Item:</Label>
-                <div className="col-span-2">{selectedOrder.item}</div>
-              </div>
-              <div className="grid grid-cols-3 items-center gap-4">
-                <Label>Quantity:</Label>
-                <div className="col-span-2">{selectedOrder.quantity}</div>
-              </div>
-              <div className="grid grid-cols-3 items-center gap-4">
-                <Label>Total Amount:</Label>
-                <div className="col-span-2">{selectedOrder.totalAmount}</div>
-              </div>
-              <div className="grid grid-cols-3 items-center gap-4">
-                <Label>Vendor:</Label>
-                <div className="col-span-2">{selectedOrder.vendor}</div>
-              </div>
-              <div className="grid grid-cols-3 items-center gap-4">
-                <Label>Supplier:</Label>
-                <div className="col-span-2">{selectedOrder.supplier}</div>
-              </div>
-              <div className="grid grid-cols-3 items-center gap-4">
-                <Label>Status:</Label>
-                <div className="col-span-2">
-                  <Badge variant={getStatusBadgeVariant(selectedOrder.status)}>{selectedOrder.status}</Badge>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 items-center gap-4">
-                <Label>Order Date:</Label>
-                <div className="col-span-2">{selectedOrder.date}</div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </AdminLayout>
   )
 }

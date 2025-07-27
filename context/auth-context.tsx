@@ -65,16 +65,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const response = await fetch("/api/auth/verify-otp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ userId, otp }),
+      body: JSON.stringify({ email: userId, otp }), // If backend expects email, pass email here
     });
-    if (response.ok) {
-      const userData = await response.json();
-      setUser(userData.user);
-      router.push(`/${userData.user.role}/dashboard`);
-    } else {
-      throw new Error((await response.json()).message);
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || "OTP verification failed.");
     }
+
+    return data;
   };
 
   const logout = async () => {
