@@ -75,18 +75,27 @@
   }
 }
 
-/* Custom badge variants for status */
+/* Custom badge variants for order/user status */
 .badge-success {
   @apply bg-green-500 text-white hover:bg-green-600;
 }
-
 .badge-info {
   @apply bg-blue-500 text-white hover:bg-blue-600;
 }
-
 .badge-warning {
-  @apply bg-orange-500 text-white hover:bg-orange-600;
+  @apply bg-yellow-500 text-white hover:bg-yellow-600;
 }
 
-/* Leaflet CSS */
+/* Leaflet map styles */
 @import "leaflet/dist/leaflet.css";
+
+/* Fix for Leaflet default icon paths */
+.leaflet-default-icon-path {
+  background-image: url("https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png");
+}
+.leaflet-default-icon-path.leaflet-marker-icon {
+  background-image: url("https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png");
+}
+.leaflet-default-icon-path.leaflet-marker-shadow {
+  background-image: url("https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png");
+}
