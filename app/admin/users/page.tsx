@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Users, Search, Filter, Edit, Trash2, Eye } from "lucide-react"
+import { Users, Search, Filter, Edit, Trash2, Eye, CheckCircle, XCircle } from "lucide-react"
 import AdminLayout from "@/components/admin-layout"
 
 const users = [
@@ -19,6 +19,7 @@ const users = [
     type: "Vendor",
     email: "rajesh@example.com",
     status: "Active",
+    isVerified: true,
     joined: "2023-01-15",
   },
   {
@@ -27,6 +28,7 @@ const users = [
     type: "Supplier",
     email: "suresh@example.com",
     status: "Active",
+    isVerified: true,
     joined: "2023-02-01",
   },
   {
@@ -35,6 +37,7 @@ const users = [
     type: "Vendor",
     email: "priya@example.com",
     status: "Inactive",
+    isVerified: false,
     joined: "2023-03-10",
   },
   {
@@ -43,6 +46,7 @@ const users = [
     type: "Supplier",
     email: "freshmart@example.com",
     status: "Pending",
+    isVerified: false,
     joined: "2023-04-05",
   },
   {
@@ -51,6 +55,7 @@ const users = [
     type: "Vendor",
     email: "amit@example.com",
     status: "Active",
+    isVerified: true,
     joined: "2023-05-20",
   },
 ]
@@ -59,6 +64,7 @@ export default function AdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState("All")
   const [filterStatus, setFilterStatus] = useState("All")
+  const [filterVerification, setFilterVerification] = useState("All")
 
   const filteredUsers = users.filter((user) => {
     const searchMatch =
@@ -67,7 +73,11 @@ export default function AdminUsersPage() {
       user.id.toLowerCase().includes(searchTerm.toLowerCase())
     const typeMatch = filterType === "All" || user.type === filterType
     const statusMatch = filterStatus === "All" || user.status === filterStatus
-    return searchMatch && typeMatch && statusMatch
+    const verificationMatch =
+      filterVerification === "All" ||
+      (filterVerification === "Verified" && user.isVerified) ||
+      (filterVerification === "Unverified" && !user.isVerified)
+    return searchMatch && typeMatch && statusMatch && verificationMatch
   })
 
   const getStatusBadgeVariant = (status: string) => {
@@ -134,6 +144,21 @@ export default function AdminUsersPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex-1 space-y-2 md:space-y-0">
+              <Label htmlFor="verification-filter" className="sr-only">
+                Filter by Verification
+              </Label>
+              <Select value={filterVerification} onValueChange={setFilterVerification}>
+                <SelectTrigger id="verification-filter">
+                  <SelectValue placeholder="All Verification" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Verification</SelectItem>
+                  <SelectItem value="Verified">Verified</SelectItem>
+                  <SelectItem value="Unverified">Unverified</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex items-end">
               <Button
                 variant="outline"
@@ -141,6 +166,7 @@ export default function AdminUsersPage() {
                   setSearchTerm("")
                   setFilterType("All")
                   setFilterStatus("All")
+                  setFilterVerification("All")
                 }}
               >
                 <Filter className="h-4 w-4 mr-2" />
@@ -169,6 +195,7 @@ export default function AdminUsersPage() {
                     <TableHead>Type</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Verification</TableHead>
                     <TableHead>Joined Date</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -176,7 +203,7 @@ export default function AdminUsersPage() {
                 <TableBody>
                   {filteredUsers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-gray-500">
+                      <TableCell colSpan={8} className="text-center text-gray-500">
                         No users found matching your criteria.
                       </TableCell>
                     </TableRow>
@@ -191,6 +218,17 @@ export default function AdminUsersPage() {
                         <TableCell>{user.email}</TableCell>
                         <TableCell>
                           <Badge variant={getStatusBadgeVariant(user.status)}>{user.status}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {user.isVerified ? (
+                            <Badge className="bg-green-100 text-green-800">
+                              <CheckCircle className="h-3 w-3 mr-1" /> Verified
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive">
+                              <XCircle className="h-3 w-3 mr-1" /> Unverified
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell>{user.joined}</TableCell>
                         <TableCell>

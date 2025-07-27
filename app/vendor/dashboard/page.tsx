@@ -1,9 +1,10 @@
 "use client"
 
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Users, Clock, TrendingDown, Plus } from "lucide-react"
+import { Users, Clock, TrendingDown, Plus, MapPin } from "lucide-react"
 import VendorLayout from "@/components/vendor-layout"
 import Link from "next/link"
 import { useToast } from "@/components/ui/use-toast"
@@ -19,6 +20,7 @@ const activeGroupOrders = [
     discount: "17%",
     timeLeft: "2h 30m",
     location: "Karol Bagh Market",
+    image: "/placeholder.svg?height=100&width=100",
   },
   {
     id: 2,
@@ -30,6 +32,7 @@ const activeGroupOrders = [
     discount: "22%",
     timeLeft: "4h 15m",
     location: "Lajpat Nagar",
+    image: "/placeholder.svg?height=100&width=100",
   },
   {
     id: 3,
@@ -41,6 +44,19 @@ const activeGroupOrders = [
     discount: "18%",
     timeLeft: "1h 45m",
     location: "Chandni Chowk",
+    image: "/placeholder.svg?height=100&width=100",
+  },
+  {
+    id: 4,
+    item: "Green Chili",
+    currentVendors: 4,
+    targetVendors: 8,
+    currentPrice: "₹70/kg",
+    originalPrice: "₹85/kg",
+    discount: "17%",
+    timeLeft: "3h 0m",
+    location: "Dwarka",
+    image: "/placeholder.svg?height=100&width=100",
   },
 ]
 
@@ -58,14 +74,14 @@ export default function VendorDashboard() {
     <VendorLayout>
       <div className="space-y-6">
         {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-lg">
+        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-lg shadow-md">
           <h1 className="text-2xl font-bold mb-2">Welcome back, Rajesh!</h1>
           <p className="opacity-90">Ready to save money on your raw materials today?</p>
         </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
+          <Card className="shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Orders</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
@@ -75,7 +91,7 @@ export default function VendorDashboard() {
               <p className="text-xs text-muted-foreground">+2 from yesterday</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">This Month Savings</CardTitle>
               <TrendingDown className="h-4 w-4 text-muted-foreground" />
@@ -85,7 +101,7 @@ export default function VendorDashboard() {
               <p className="text-xs text-muted-foreground">+15% from last month</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Wallet Balance</CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
@@ -102,7 +118,7 @@ export default function VendorDashboard() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Nearby Active Group Orders</h2>
             <Link href="/vendor/start-order">
-              <Button className="bg-green-600 hover:bg-green-700">
+              <Button className="bg-green-600 hover:bg-green-700 shadow-md">
                 <Plus className="h-4 w-4 mr-2" />
                 Start New Order
               </Button>
@@ -111,28 +127,38 @@ export default function VendorDashboard() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {activeGroupOrders.map((order) => (
-              <Card key={order.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{order.item}</CardTitle>
-                    <Badge variant="secondary" className="bg-green-100 text-green-800">
-                      {order.discount} OFF
-                    </Badge>
-                  </div>
-                  <CardDescription>{order.location}</CardDescription>
+              <Card key={order.id} className="overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200">
+                <div className="relative h-32 w-full bg-gray-100">
+                  <Image
+                    src={order.image || "/placeholder.svg"}
+                    alt={order.item}
+                    layout="fill"
+                    objectFit="cover"
+                    className="rounded-t-lg"
+                  />
+                  <Badge className="absolute top-2 right-2 bg-green-500 text-white text-sm px-3 py-1 rounded-full">
+                    {order.discount} OFF
+                  </Badge>
+                </div>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">{order.item}</CardTitle>
+                  <CardDescription className="flex items-center text-sm text-gray-500">
+                    <MapPin className="h-3 w-3 mr-1" />
+                    {order.location}
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-3 pt-0">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Current Price:</span>
                     <div className="text-right">
-                      <span className="font-semibold text-green-600">{order.currentPrice}</span>
+                      <span className="font-semibold text-green-600 text-lg">{order.currentPrice}</span>
                       <span className="text-sm text-gray-400 line-through ml-2">{order.originalPrice}</span>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Vendors:</span>
-                    <span className="text-sm">
+                    <span className="text-sm font-medium">
                       {order.currentVendors}/{order.targetVendors}
                     </span>
                   </div>
@@ -146,11 +172,14 @@ export default function VendorDashboard() {
 
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Time Left:</span>
-                    <span className="text-sm font-medium text-orange-600">{order.timeLeft}</span>
+                    <span className="text-sm font-medium text-orange-600 flex items-center">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {order.timeLeft}
+                    </span>
                   </div>
 
                   <Button
-                    className="w-full bg-green-600 hover:bg-green-700"
+                    className="w-full bg-green-600 hover:bg-green-700 shadow-md"
                     onClick={() => handleJoinOrder(order.item)}
                   >
                     Join Order
