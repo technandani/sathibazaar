@@ -7,8 +7,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Filter, User, CheckCircle, XCircle } from "lucide-react"
+import { Search, Filter, User, CheckCircle, XCircle, Eye, Edit, Trash2 } from "lucide-react"
 import AdminLayout from "@/components/admin-layout"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { useToast } from "@/components/ui/use-toast"
 
 type UserRole = "Vendor" | "Supplier" | "Admin"
 type UserStatus = "Active" | "Inactive" | "Suspended"
@@ -24,7 +34,7 @@ type UserData = {
   lastLogin: string
 }
 
-const allUsers: UserData[] = [
+const initialUsers: UserData[] = [
   {
     id: "USR-001",
     name: "Rajesh Kumar",
@@ -82,11 +92,24 @@ const allUsers: UserData[] = [
 ]
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<UserData[]>(allUsers)
+  const [users, setUsers] = useState<UserData[]>(initialUsers)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterRole, setFilterRole] = useState("All")
   const [filterStatus, setFilterStatus] = useState("All")
-  const [filterVerification, setFilterVerification] = useState("All") // New filter state
+  const [filterVerification, setFilterVerification] = useState("All")
+
+  const [isViewDetailsOpen, setIsViewDetailsOpen] = useState(false)
+  const [isEditUserOpen, setIsEditUserOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<UserData | null>(null)
+  const { toast } = useToast()
+
+  // State for edit form
+  const [editName, setEditName] = useState("")
+  const [editEmail, setEditEmail] = useState("")
+  const [editRole, setEditRole] = useState<UserRole>("Vendor")
+  const [editStatus, setEditStatus] = useState<UserStatus>("Active")
+  const [editVerification, setEditVerification] = useState<VerificationStatus>("Verified")
 
   const filteredUsers = users.filter((user) => {
     const searchMatch =
@@ -95,7 +118,7 @@ export default function AdminUsersPage() {
       user.id.toLowerCase().includes(searchTerm.toLowerCase())
     const roleMatch = filterRole === "All" || user.role === filterRole
     const statusMatch = filterStatus === "All" || user.status === filterStatus
-    const verificationMatch = filterVerification === "All" || user.verification === filterVerification // New filter logic
+    const verificationMatch = filterVerification === "All" || user.verification === filterVerification
     return searchMatch && roleMatch && statusMatch && verificationMatch
   })
 
@@ -120,6 +143,64 @@ export default function AdminUsersPage() {
         return "destructive"
       default:
         return "outline"
+    }
+  }
+
+  const handleViewDetails = (user: UserData) => {
+    setSelectedUser(user)
+    setIsViewDetailsOpen(true)
+  }
+
+  const handleEditUser = (user: UserData) => {
+    setSelectedUser(user)
+    setEditName(user.name)
+    setEditEmail(user.email)
+    setEditRole(user.role)
+    setEditStatus(user.status)
+    setEditVerification(user.verification)
+    setIsEditUserOpen(true)
+  }
+
+  const handleSaveEdit = () => {
+    if (selectedUser) {
+      setUsers(
+        users.map((u) =>
+          u.id === selectedUser.id
+            ? {
+                ...u,
+                name: editName,
+                email: editEmail,
+                role: editRole,
+                status: editStatus,
+                verification: editVerification,
+              }
+            : u,
+        ),
+      )
+      toast({
+        title: "User Updated!",
+        description: `User ${selectedUser.name} has been updated.`,
+      })
+      setIsEditUserOpen(false)
+      setSelectedUser(null)
+    }
+  }
+
+  const handleDeleteUser = (user: UserData) => {
+    setSelectedUser(user)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = () => {
+    if (selectedUser) {
+      setUsers(users.filter((u) => u.id !== selectedUser.id))
+      toast({
+        title: "User Deleted!",
+        description: `User ${selectedUser.name} has been deleted.`,
+        variant: "destructive",
+      })
+      setIsDeleteDialogOpen(false)
+      setSelectedUser(null)
     }
   }
 
@@ -171,8 +252,6 @@ export default function AdminUsersPage() {
             </div>
             <div className="flex-1">
               <Select value={filterVerification} onValueChange={setFilterVerification}>
-                {" "}
-                {/* New Verification Filter */}
                 <SelectTrigger>
                   <SelectValue placeholder="Filter by Verification" />
                 </SelectTrigger>
@@ -190,7 +269,7 @@ export default function AdminUsersPage() {
                   setSearchTerm("")
                   setFilterRole("All")
                   setFilterStatus("All")
-                  setFilterVerification("All") // Reset new filter
+                  setFilterVerification("All")
                 }}
               >
                 <Filter className="h-4 w-4 mr-2" />
@@ -219,7 +298,7 @@ export default function AdminUsersPage() {
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Verification</TableHead> {/* New column */}
+                    <TableHead>Verification</TableHead>
                     <TableHead>Last Login</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -256,9 +335,32 @@ export default function AdminUsersPage() {
                         </TableCell>
                         <TableCell>{user.lastLogin}</TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm">
-                            Edit
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              title="View Details"
+                              onClick={() => handleViewDetails(user)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              title="Edit User"
+                              onClick={() => handleEditUser(user)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              title="Delete User"
+                              onClick={() => handleDeleteUser(user)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -269,6 +371,141 @@ export default function AdminUsersPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* View User Details Dialog */}
+      <Dialog open={isViewDetailsOpen} onOpenChange={setIsViewDetailsOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>User Details: {selectedUser?.name}</DialogTitle>
+            <DialogDescription>Full information about the selected user.</DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-3 items-center gap-4">
+                <Label>ID:</Label>
+                <div className="col-span-2">{selectedUser.id}</div>
+              </div>
+              <div className="grid grid-cols-3 items-center gap-4">
+                <Label>Name:</Label>
+                <div className="col-span-2">{selectedUser.name}</div>
+              </div>
+              <div className="grid grid-cols-3 items-center gap-4">
+                <Label>Email:</Label>
+                <div className="col-span-2">{selectedUser.email}</div>
+              </div>
+              <div className="grid grid-cols-3 items-center gap-4">
+                <Label>Role:</Label>
+                <div className="col-span-2">{selectedUser.role}</div>
+              </div>
+              <div className="grid grid-cols-3 items-center gap-4">
+                <Label>Status:</Label>
+                <div className="col-span-2">
+                  <Badge variant={getStatusBadgeVariant(selectedUser.status)}>{selectedUser.status}</Badge>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 items-center gap-4">
+                <Label>Verification:</Label>
+                <div className="col-span-2">
+                  <Badge variant={getVerificationBadgeVariant(selectedUser.verification)}>
+                    {selectedUser.verification}
+                  </Badge>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 items-center gap-4">
+                <Label>Last Login:</Label>
+                <div className="col-span-2">{selectedUser.lastLogin}</div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit User: {selectedUser?.name}</DialogTitle>
+            <DialogDescription>Update the details for this user.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Name</Label>
+              <Input id="edit-name" value={editName} onChange={(e) => setEditName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input id="edit-email" type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-role">Role</Label>
+              <Select value={editRole} onValueChange={(value) => setEditRole(value as UserRole)}>
+                <SelectTrigger id="edit-role">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Vendor">Vendor</SelectItem>
+                  <SelectItem value="Supplier">Supplier</SelectItem>
+                  <SelectItem value="Admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-status">Status</Label>
+              <Select value={editStatus} onValueChange={(value) => setEditStatus(value as UserStatus)}>
+                <SelectTrigger id="edit-status">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
+                  <SelectItem value="Suspended">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-verification">Verification</Label>
+              <Select
+                value={editVerification}
+                onValueChange={(value) => setEditVerification(value as VerificationStatus)}
+              >
+                <SelectTrigger id="edit-verification">
+                  <SelectValue placeholder="Select verification status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Verified">Verified</SelectItem>
+                  <SelectItem value="Unverified">Unverified</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditUserOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete user &quot;{selectedUser?.name}&quot;? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   )
 }

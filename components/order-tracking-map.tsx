@@ -5,19 +5,21 @@ import "leaflet/dist/leaflet.css"
 import L from "leaflet"
 import { useEffect, useRef } from "react"
 
-// Fix for default marker icon issue with Webpack
-delete (L.Icon.Default.prototype as any)._getIconUrl
+// Fix for default icon issue with Webpack
+// @ts-ignore
+delete L.Icon.Default.prototype._getIconUrl
+
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
   iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
   shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
 })
 
-interface OrderTrackingMapProps {
-  origin: [number, number] // [latitude, longitude]
+type OrderTrackingMapProps = {
+  origin: [number, number]
   destination: [number, number]
-  currentLocation?: [number, number] // Optional, for real-time tracking
-  orderId: string
+  currentLocation?: [number, number]
+  orderId?: string
 }
 
 export default function OrderTrackingMap({ origin, destination, currentLocation, orderId }: OrderTrackingMapProps) {
@@ -25,7 +27,6 @@ export default function OrderTrackingMap({ origin, destination, currentLocation,
 
   useEffect(() => {
     if (mapRef.current) {
-      // Adjust map view to fit all markers
       const bounds = L.latLngBounds([origin, destination])
       if (currentLocation) {
         bounds.extend(currentLocation)
@@ -39,9 +40,14 @@ export default function OrderTrackingMap({ origin, destination, currentLocation,
       center={origin}
       zoom={13}
       scrollWheelZoom={false}
-      style={{ height: "400px", width: "100%", borderRadius: "8px" }}
-      whenCreated={(mapInstance) => {
-        mapRef.current = mapInstance
+      className="h-full w-full rounded-md"
+      whenCreated={(map) => {
+        mapRef.current = map
+        const bounds = L.latLngBounds([origin, destination])
+        if (currentLocation) {
+          bounds.extend(currentLocation)
+        }
+        map.fitBounds(bounds, { padding: [50, 50] })
       }}
     >
       <TileLayer
@@ -49,10 +55,10 @@ export default function OrderTrackingMap({ origin, destination, currentLocation,
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <Marker position={origin}>
-        <Popup>Order Origin: {orderId}</Popup>
+        <Popup>Origin: Supplier Location</Popup>
       </Marker>
       <Marker position={destination}>
-        <Popup>Delivery Destination: {orderId}</Popup>
+        <Popup>Destination: Vendor Location</Popup>
       </Marker>
       {currentLocation && (
         <Marker position={currentLocation}>

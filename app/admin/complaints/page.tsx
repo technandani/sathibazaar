@@ -1,7 +1,5 @@
 "use client"
 
-import { Label } from "@/components/ui/label"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,8 +9,33 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AlertTriangle, Search, Filter, Eye, CheckCircle, MessageSquare } from "lucide-react"
 import AdminLayout from "@/components/admin-layout"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { useToast } from "@/components/ui/use-toast"
 
-const complaints = [
+type ComplaintStatus = "Open" | "In Progress" | "Resolved"
+type ComplaintPriority = "High" | "Medium" | "Low"
+
+type ComplaintData = {
+  id: string
+  user: string
+  userType: string
+  issue: string
+  status: ComplaintStatus
+  priority: ComplaintPriority
+  date: string
+  resolutionNotes?: string
+}
+
+const initialComplaints: ComplaintData[] = [
   {
     id: "CMP-001",
     user: "Rajesh Kumar",
@@ -30,6 +53,7 @@ const complaints = [
     status: "Resolved",
     priority: "Medium",
     date: "2024-07-22",
+    resolutionNotes: "Payment processed on 2024-07-22. User notified.",
   },
   {
     id: "CMP-003",
@@ -52,9 +76,16 @@ const complaints = [
 ]
 
 export default function AdminComplaintsPage() {
+  const [complaints, setComplaints] = useState<ComplaintData[]>(initialComplaints)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("All")
   const [filterPriority, setFilterPriority] = useState("All")
+
+  const [isViewDetailsOpen, setIsViewDetailsOpen] = useState(false)
+  const [isReplyModalOpen, setIsReplyModalOpen] = useState(false)
+  const [selectedComplaint, setSelectedComplaint] = useState<ComplaintData | null>(null)
+  const [replyMessage, setReplyMessage] = useState("")
+  const { toast } = useToast()
 
   const filteredComplaints = complaints.filter((complaint) => {
     const searchMatch =
@@ -66,7 +97,7 @@ export default function AdminComplaintsPage() {
     return searchMatch && statusMatch && priorityMatch
   })
 
-  const getStatusBadgeVariant = (status: string) => {
+  const getStatusBadgeVariant = (status: ComplaintStatus) => {
     switch (status) {
       case "Open":
         return "destructive"
@@ -79,7 +110,7 @@ export default function AdminComplaintsPage() {
     }
   }
 
-  const getPriorityBadgeVariant = (priority: string) => {
+  const getPriorityBadgeVariant = (priority: ComplaintPriority) => {
     switch (priority) {
       case "High":
         return "destructive"
@@ -89,6 +120,47 @@ export default function AdminComplaintsPage() {
         return "outline"
       default:
         return "outline"
+    }
+  }
+
+  const handleViewDetails = (complaint: ComplaintData) => {
+    setSelectedComplaint(complaint)
+    setIsViewDetailsOpen(true)
+  }
+
+  const handleMarkAsResolved = (complaintId: string) => {
+    setComplaints((prevComplaints) =>
+      prevComplaints.map((c) =>
+        c.id === complaintId ? { ...c, status: "Resolved", resolutionNotes: "Resolved by admin." } : c,
+      ),
+    )
+    toast({
+      title: "Complaint Resolved!",
+      description: `Complaint ${complaintId} has been marked as resolved.`,
+    })
+  }
+
+  const handleReply = (complaint: ComplaintData) => {
+    setSelectedComplaint(complaint)
+    setReplyMessage("") // Clear previous reply message
+    setIsReplyModalOpen(true)
+  }
+
+  const sendReply = () => {
+    if (selectedComplaint && replyMessage.trim()) {
+      console.log(`Replying to ${selectedComplaint.id}: ${replyMessage}`)
+      toast({
+        title: "Reply Sent!",
+        description: `Your reply to complaint ${selectedComplaint.id} has been sent.`,
+      })
+      setIsReplyModalOpen(false)
+      setReplyMessage("")
+    } else {
+      toast({
+        title: "Error",
+        description: "Reply message cannot be empty.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -207,15 +279,30 @@ export default function AdminComplaintsPage() {
                         <TableCell>{complaint.date}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
-                            <Button variant="outline" size="icon" title="View Details">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              title="View Details"
+                              onClick={() => handleViewDetails(complaint)}
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
                             {complaint.status !== "Resolved" && (
-                              <Button variant="default" size="icon" title="Mark as Resolved">
+                              <Button
+                                variant="default"
+                                size="icon"
+                                title="Mark as Resolved"
+                                onClick={() => handleMarkAsResolved(complaint.id)}
+                              >
                                 <CheckCircle className="h-4 w-4" />
                               </Button>
                             )}
-                            <Button variant="secondary" size="icon" title="Reply">
+                            <Button
+                              variant="secondary"
+                              size="icon"
+                              title="Reply"
+                              onClick={() => handleReply(complaint)}
+                            >
                               <MessageSquare className="h-4 w-4" />
                             </Button>
                           </div>
@@ -229,6 +316,88 @@ export default function AdminComplaintsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* View Complaint Details Dialog */}
+      <Dialog open={isViewDetailsOpen} onOpenChange={setIsViewDetailsOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Complaint Details: {selectedComplaint?.id}</DialogTitle>
+            <DialogDescription>Full information about the reported issue.</DialogDescription>
+          </DialogHeader>
+          {selectedComplaint && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-3 items-center gap-4">
+                <Label>Complaint ID:</Label>
+                <div className="col-span-2">{selectedComplaint.id}</div>
+              </div>
+              <div className="grid grid-cols-3 items-center gap-4">
+                <Label>User:</Label>
+                <div className="col-span-2">
+                  {selectedComplaint.user} ({selectedComplaint.userType})
+                </div>
+              </div>
+              <div className="grid grid-cols-3 items-center gap-4">
+                <Label>Issue:</Label>
+                <div className="col-span-2">{selectedComplaint.issue}</div>
+              </div>
+              <div className="grid grid-cols-3 items-center gap-4">
+                <Label>Status:</Label>
+                <div className="col-span-2">
+                  <Badge variant={getStatusBadgeVariant(selectedComplaint.status)}>{selectedComplaint.status}</Badge>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 items-center gap-4">
+                <Label>Priority:</Label>
+                <div className="col-span-2">
+                  <Badge variant={getPriorityBadgeVariant(selectedComplaint.priority)}>
+                    {selectedComplaint.priority}
+                  </Badge>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 items-center gap-4">
+                <Label>Date:</Label>
+                <div className="col-span-2">{selectedComplaint.date}</div>
+              </div>
+              {selectedComplaint.resolutionNotes && (
+                <div className="grid grid-cols-3 items-center gap-4">
+                  <Label>Resolution Notes:</Label>
+                  <div className="col-span-2 text-sm text-gray-700">{selectedComplaint.resolutionNotes}</div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Reply to Complaint Dialog */}
+      <Dialog open={isReplyModalOpen} onOpenChange={setIsReplyModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reply to Complaint: {selectedComplaint?.id}</DialogTitle>
+            <DialogDescription>
+              Send a message to {selectedComplaint?.user} regarding their complaint.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="reply-message">Your Message</Label>
+              <Textarea
+                id="reply-message"
+                placeholder="Type your reply here..."
+                value={replyMessage}
+                onChange={(e) => setReplyMessage(e.target.value)}
+                rows={5}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsReplyModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={sendReply}>Send Reply</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   )
 }
