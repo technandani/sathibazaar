@@ -22,8 +22,14 @@ import {
   Target,
   Truck,
   DollarSign,
+  Handshake,
+  Lightbulb,
+  Coins,
+  Package,
+  Route,
 } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
 const stats = [
   { label: "Active Vendors", value: "2,500+", icon: Users },
@@ -76,7 +82,7 @@ const testimonials = [
     name: "Rajesh Kumar",
     role: "Street Food Vendor",
     location: "Delhi",
-    image: "R",
+    image: "/placeholder.svg?height=80&width=80",
     rating: 5,
     text: "SathiBazaar helped me save 30% on my monthly raw material costs. The group ordering system is brilliant! I can now focus more on my business instead of worrying about ingredient costs.",
     savings: "₹8,000/month",
@@ -85,7 +91,7 @@ const testimonials = [
     name: "Priya Sharma",
     role: "Chaat Vendor",
     location: "Mumbai",
-    image: "P",
+    image: "/placeholder.svg?height=80&width=80",
     rating: 5,
     text: "The quality of ingredients is excellent and the delivery is always on time. My customers have noticed the difference in taste since I started using SathiBazaar.",
     savings: "₹5,500/month",
@@ -94,10 +100,38 @@ const testimonials = [
     name: "Suresh Vegetables",
     role: "Wholesale Supplier",
     location: "Bangalore",
-    image: "S",
+    image: "/placeholder.svg?height=80&width=80",
     rating: 5,
     text: "As a supplier, I love the bulk orders. It's easier to manage inventory and vendors get better prices too. Win-win for everyone!",
     savings: "40% more orders",
+  },
+]
+
+const additionalInfo = [
+  {
+    icon: Handshake,
+    title: "Community Driven",
+    description: "Connect with a network of vendors and suppliers, fostering a supportive ecosystem for growth.",
+  },
+  {
+    icon: Lightbulb,
+    title: "Smart Insights",
+    description: "Gain valuable insights into market trends and pricing to make informed purchasing decisions.",
+  },
+  {
+    icon: Coins,
+    title: "Transparent Pricing",
+    description: "No hidden fees or surprises. See exactly what you pay and what you save.",
+  },
+  {
+    icon: Package,
+    title: "Diverse Product Range",
+    description: "Access a wide variety of raw materials, from fresh produce to spices and packaging.",
+  },
+  {
+    icon: Route,
+    title: "Optimized Logistics",
+    description: "Efficient delivery routes and pickup points designed for your convenience.",
   },
 ]
 
@@ -128,13 +162,13 @@ export default function HomePage() {
             </div>
           </div>
           <div className="flex space-x-3">
-            <Link href="/vendor/dashboard">
+            <Link href="/vendor/login">
               <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50 bg-transparent">
                 <Users className="h-4 w-4 mr-2" />
                 Vendor Login
               </Button>
             </Link>
-            <Link href="/supplier/dashboard">
+            <Link href="/supplier/login">
               <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg">
                 <Truck className="h-4 w-4 mr-2" />
                 Supplier Login
@@ -168,24 +202,24 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link href="/vendor/dashboard">
+            <Link href="/vendor/signup">
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 px-8 py-4 text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-200"
               >
                 <Users className="h-5 w-5 mr-2" />
-                Start as Vendor
+                Register as Vendor
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
             </Link>
-            <Link href="/supplier/dashboard">
+            <Link href="/supplier/signup">
               <Button
                 size="lg"
                 variant="outline"
                 className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-4 text-lg bg-white/80 backdrop-blur-sm hover:shadow-xl transform hover:scale-105 transition-all duration-200"
               >
                 <Truck className="h-5 w-5 mr-2" />
-                Join as Supplier
+                Register as Supplier
               </Button>
             </Link>
           </div>
@@ -273,7 +307,7 @@ export default function HomePage() {
               <div className="text-center md:text-left">
                 <h4 className="text-2xl font-bold mb-4">Ready to start saving?</h4>
                 <p className="text-gray-600 mb-6">Join thousands of vendors already saving money</p>
-                <Link href="/vendor/dashboard">
+                <Link href="/vendor/signup">
                   <Button className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg">
                     Get Started Now
                     <ArrowRight className="h-4 w-4 ml-2" />
@@ -318,6 +352,32 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Additional Information Section */}
+      <section className="py-20 px-4 bg-gradient-to-br from-blue-50 to-green-50">
+        <div className="container mx-auto">
+          <div className="text-center mb-16">
+            <Badge className="mb-4 bg-teal-100 text-teal-800 border-teal-200">More Reasons to Join</Badge>
+            <h3 className="text-4xl md:text-5xl font-bold mb-6">Beyond Savings: The SathiBazaar Advantage</h3>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Discover how SathiBazaar empowers your business in more ways than one.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {additionalInfo.map((item, index) => (
+              <Card key={index} className="p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+                <CardContent className="pt-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center mb-4">
+                    <item.icon className="h-7 w-7 text-white" />
+                  </div>
+                  <h4 className="text-xl font-bold mb-3">{item.title}</h4>
+                  <p className="text-gray-600 leading-relaxed">{item.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials */}
       <section className="py-20 px-4 bg-white">
         <div className="container mx-auto">
@@ -344,9 +404,13 @@ export default function HomePage() {
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center mr-4">
-                      <span className="text-white font-bold text-xl">{testimonials[currentTestimonial].image}</span>
-                    </div>
+                    <Image
+                      src={testimonials[currentTestimonial].image || "/placeholder.svg"}
+                      alt={testimonials[currentTestimonial].name}
+                      width={80}
+                      height={80}
+                      className="w-16 h-16 rounded-full object-cover mr-4 shadow-md"
+                    />
                     <div>
                       <p className="font-bold text-lg">{testimonials[currentTestimonial].name}</p>
                       <p className="text-gray-600">{testimonials[currentTestimonial].role}</p>
@@ -386,7 +450,7 @@ export default function HomePage() {
             Join thousands of vendors who are already saving money and growing their businesses with SathiBazaar
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/vendor/dashboard">
+            <Link href="/vendor/signup">
               <Button
                 size="lg"
                 className="bg-white text-green-600 hover:bg-gray-100 px-8 py-4 text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-200"
@@ -395,7 +459,7 @@ export default function HomePage() {
                 Start Saving Today
               </Button>
             </Link>
-            <Link href="/supplier/dashboard">
+            <Link href="/supplier/signup">
               <Button
                 size="lg"
                 variant="outline"
