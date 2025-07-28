@@ -30,6 +30,9 @@ const dummyMapCoords = {
 }
 
 export default function SupplierOrdersPage() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
   const [orders, setOrders] = useState<OrderType[]>([])
   const [isMapOpen, setIsMapOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<OrderType | null>(null)
@@ -250,7 +253,7 @@ export default function SupplierOrdersPage() {
                                 </DialogHeader>
                                 {selectedOrder && dummyMapCoords[selectedOrder.id as keyof typeof dummyMapCoords] && (
                                   <div className="h-[400px] w-full">
-                                    <OrderTrackingMap
+                                    {mounted && (<OrderTrackingMap
                                       origin={dummyMapCoords[selectedOrder.id as keyof typeof dummyMapCoords].origin}
                                       destination={
                                         dummyMapCoords[selectedOrder.id as keyof typeof dummyMapCoords].destination
@@ -259,7 +262,7 @@ export default function SupplierOrdersPage() {
                                         dummyMapCoords[selectedOrder.id as keyof typeof dummyMapCoords].currentLocation
                                       }
                                       orderId={selectedOrder.id}
-                                    />
+                                    />)}
                                   </div>
                                 )}
                                 {selectedOrder && !dummyMapCoords[selectedOrder.id as keyof typeof dummyMapCoords] && (
@@ -304,12 +307,12 @@ export default function SupplierOrdersPage() {
           </DialogHeader>
           {selectedOrder && dummyMapCoords[selectedOrder.id as keyof typeof dummyMapCoords] && (
             <div className="flex-1">
-              <OrderTrackingMap
+              {mounted && (<OrderTrackingMap
                 origin={dummyMapCoords[selectedOrder.id as keyof typeof dummyMapCoords].origin}
                 destination={dummyMapCoords[selectedOrder.id as keyof typeof dummyMapCoords].destination}
                 currentLocation={dummyMapCoords[selectedOrder.id as keyof typeof dummyMapCoords].currentLocation}
                 orderId={selectedOrder.id}
-              />
+              />)}
             </div>
           )}
           {selectedOrder && !dummyMapCoords[selectedOrder.id as keyof typeof dummyMapCoords] && (
